@@ -14,7 +14,7 @@
     --ink-200:#e1e6ee; --ink-100:#f0f3f8; --ink-50:#f8fafc; --white:#fff;
     --accent:#2b3ff0; --emerald:#047857; --emerald-soft:#ecfdf5;
     --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
-    --hand:'Virgil','Segoe Print','Comic Sans MS',cursive;
+    --hand:'Inter',sans-serif;
     --maxw:1360px;
   }
   *,*::before,*::after{ box-sizing:border-box; }
@@ -37,7 +37,7 @@
   /* Excalidraw-like canvas */
   .canvas{ background-color:#fff; background-image:radial-gradient(#dde2ea 1.1px, transparent 1.1px); background-size:22px 22px; border:1px solid var(--ink-200); border-radius:20px; padding:18px; }
   .canvas svg{ width:100%; height:auto; display:block; }
-  .legend{ display:flex; flex-wrap:wrap; gap:22px; margin-top:14px; font-family:var(--hand); font-size:15px; color:#343a40; }
+  .legend{ display:flex; flex-wrap:wrap; gap:22px; margin-top:14px; font-family:var(--hand); font-size:13px; font-weight:500; color:#343a40; }
   .legend span{ display:inline-flex; align-items:center; gap:8px; }
   .legend i{ display:inline-block; width:34px; height:0; border-top:2px solid #1e1e1e; }
   .legend i.dash{ border-top:2px dashed #e03131; }
@@ -211,7 +211,7 @@ const cloudPath = (x,y,w,h) => `M${x+.22*w},${y+.88*h} C${x-.04*w},${y+.88*h} ${
 
 function text(parent, x, y, str, o = {}){
   const t = el("text", { x, y, "text-anchor": o.anchor || "middle", "dominant-baseline": "middle",
-    "font-family": "Virgil, 'Segoe Print', 'Comic Sans MS', cursive", "font-size": o.size || 18,
+    "font-family": "Inter, -apple-system, 'Segoe UI', sans-serif", "font-weight": o.sub ? 500 : 600, "font-size": (o.size || 18) * 0.9,
     fill: o.color || INK }, parent);
   const lines = String(str).split("\n");
   const lh = (o.size || 18) * 1.25;
@@ -262,7 +262,7 @@ function render(svgId, spec){
   // Frames (dashed groupings)
   (spec.frames || []).forEach(f => {
     draw(rr(f.x,f.y,f.w,f.h,18), { stroke: f.color || "#868e96", dash:[9,7], sw:1.4, rough:0.6 }, gFrames);
-    text(gFrames, f.x + 16, f.y + 20, f.label, { anchor:"start", size:16, color: f.color || "#495057" });
+    text(gFrames, f.x + 16, f.y + 20, f.label, { anchor:"start", size:18, color: f.color || "#495057" });
   });
 
   // Edges
@@ -300,7 +300,7 @@ function render(svgId, spec){
       let offX = 0;
       let badge;
       if (e.num) { badge = el("g", {}, g); offX = 14; }
-      const t = text(g, lx + offX, ly, e.label, { size:15, color: e.col || "#343a40" });
+      const t = text(g, lx + offX, ly, e.label, { size:17, color: e.col || "#343a40" });
       const bb = t.getBBox();
       const left = e.num ? bb.x - 28 : bb.x - 6;
       bg.setAttribute("x", left); bg.setAttribute("y", bb.y - 3);
@@ -334,7 +334,7 @@ function render(svgId, spec){
       text(gNodes, cx, cy, n.title, { size:15, color:"#343a40" });
     } else if (n.sub) {
       text(gNodes, cx, cy - 11, n.title, { size: n.size || 19 });
-      text(gNodes, cx, cy + 15, n.sub, { size:13.5, color:"#495057" });
+      text(gNodes, cx, cy + 15, n.sub, { size:16, color:"#495057" });
     } else {
       text(gNodes, cx, cy, n.title, { size: n.size || 19 });
     }
