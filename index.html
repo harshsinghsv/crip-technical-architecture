@@ -6,141 +6,79 @@
 <title>CRIP — Technical Architecture | PS 26023</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  @font-face{ font-family:'Virgil'; src:url('https://cdn.jsdelivr.net/npm/@excalidraw/excalidraw@0.17.6/dist/excalidraw-assets/Virgil.woff2') format('woff2'); font-display:swap; }
   :root{
-    --ink-900:#0b1220; --ink-800:#151f30; --ink-700:#26334a; --ink-600:#3c4a63;
-    --ink-500:#5b6b85; --ink-400:#8794a8; --ink-300:#c1c9d6; --ink-200:#e1e6ee;
-    --ink-100:#f0f3f8; --ink-50:#f8fafc; --white:#fff;
-    --accent:#2b3ff0; --accent-soft:#eef0fe;
-    --teal:#0d9488; --teal-soft:#ecfdf9;
-    --amber:#b45309; --amber-soft:#fffbeb;
-    --rose:#be123c; --rose-soft:#fff1f3;
-    --emerald:#047857; --emerald-soft:#ecfdf5;
+    --ink-900:#0b1220; --ink-700:#26334a; --ink-500:#5b6b85; --ink-400:#8794a8;
+    --ink-200:#e1e6ee; --ink-100:#f0f3f8; --ink-50:#f8fafc; --white:#fff;
+    --accent:#2b3ff0; --emerald:#047857; --emerald-soft:#ecfdf5;
     --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
-    --mono:'JetBrains Mono','SF Mono',Consolas,monospace;
-    --shadow-card: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.12);
-    --maxw:1280px;
+    --hand:'Virgil','Segoe Print','Comic Sans MS',cursive;
+    --maxw:1360px;
   }
   *,*::before,*::after{ box-sizing:border-box; }
-  body{ margin:0; background:var(--white); color:var(--ink-800); font-family:var(--sans); font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased; }
+  body{ margin:0; background:var(--white); color:var(--ink-900); font-family:var(--sans); font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased; }
   img{ display:block; }
   .wrap{ max-width:var(--maxw); margin:0 auto; padding:0 40px; }
-  section{ padding:72px 0; }
-  h2{ margin:0 0 8px; font-weight:800; letter-spacing:-0.02em; color:var(--ink-900); font-size:27px; }
-  .cap{ margin:0 0 36px; font-size:13.5px; color:var(--ink-400); }
-  .icon{ width:22px; height:22px; flex-shrink:0; }
+  section{ padding:64px 0; }
+  h2{ margin:0 0 6px; font-weight:800; letter-spacing:-0.02em; font-size:28px; }
+  .cap{ margin:0 0 26px; font-size:14px; color:var(--ink-500); max-width:760px; }
 
   header.top{ border-bottom:1px solid var(--ink-200); }
   .top-inner{ display:flex; align-items:center; justify-content:space-between; height:68px; }
   .brand{ display:flex; align-items:center; gap:10px; }
   .brand .mark{ width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg,var(--accent),#5b3ff0); display:flex; align-items:center; justify-content:center; }
-  .brand .mark img{ width:18px; height:18px; filter:invert(1) brightness(2); }
-  .brand b{ font-size:14.5px; color:var(--ink-900); }
-  .brand small{ display:block; font-size:10.5px; color:var(--ink-400); font-weight:600; letter-spacing:.03em; }
+  .brand .mark img{ width:18px; height:18px; filter:brightness(0) invert(1); }
+  .brand b{ font-size:14.5px; }
+  .brand small{ display:block; font-size:10.5px; color:var(--ink-400); font-weight:600; }
   .top-tag{ font-size:11.5px; font-weight:700; color:var(--ink-500); padding:7px 13px; border:1px solid var(--ink-200); border-radius:100px; }
 
-  .panel{ background:var(--white); border:1px solid var(--ink-200); border-radius:22px; box-shadow:var(--shadow-card); }
+  /* Excalidraw-like canvas */
+  .canvas{ background-color:#fff; background-image:radial-gradient(#dde2ea 1.1px, transparent 1.1px); background-size:22px 22px; border:1px solid var(--ink-200); border-radius:20px; padding:18px; }
+  .canvas svg{ width:100%; height:auto; display:block; }
+  .legend{ display:flex; flex-wrap:wrap; gap:22px; margin-top:14px; font-family:var(--hand); font-size:15px; color:#343a40; }
+  .legend span{ display:inline-flex; align-items:center; gap:8px; }
+  .legend i{ display:inline-block; width:34px; height:0; border-top:2px solid #1e1e1e; }
+  .legend i.dash{ border-top:2px dashed #e03131; }
+  .legend i.note{ width:18px; height:14px; border:1.5px solid #1e1e1e; background:#fcc2d7; border-radius:2px; }
+  .legend i.db{ width:16px; height:18px; border:1.5px solid #1e1e1e; border-radius:8px/4px; background:#b2f2bb; }
+
   .band{ background:var(--ink-50); border-top:1px solid var(--ink-200); border-bottom:1px solid var(--ink-200); }
 
-  /* ---------- reveal (scroll fade-in, nothing else) ----------
-     No baseline opacity:0 here on purpose: the hidden state is applied by
-     JS right before animating in. If the GSAP CDN is ever blocked or slow,
-     content simply stays visible by default instead of disappearing. */
-  .js-ready .reveal{ opacity:0; transform:translateY(14px); }
-
-  /* ---------- layered architecture ---------- */
-  .layer{ position:relative; padding:26px 0; }
-  .layer:not(:last-child)::after{ content:""; position:absolute; left:50%; bottom:-2px; transform:translateX(-50%); width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-top:9px solid var(--ink-300); }
-  .layer:not(:last-child){ border-bottom:1px dashed var(--ink-200); margin-bottom:20px; }
-  .layer-label{ display:flex; align-items:center; gap:10px; margin-bottom:16px; }
-  .layer-tag{ font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; padding:5px 10px; border-radius:6px; color:#fff; }
-  .layer-title{ font-size:13.5px; font-weight:700; color:var(--ink-700); }
-  .layer-desc{ font-size:12.5px; color:var(--ink-400); margin-left:auto; }
-
-  /* ---------- shared step-card grid (used by architecture nodes, pipeline stages, request lifecycle) ---------- */
-  .step-wrap{ position:relative; }
-  .step-arrows{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0; overflow:visible; }
-  .step-grid{ position:relative; z-index:1; display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
-  .step-grid + .step-grid{ margin-top:26px; }
-
-  /* Snake (boustrophedon) flow: even rows inside a sequential pipeline/flow
-     run right-to-left visually so the row-wrap connector is a short local
-     drop, not a long diagonal sweeping across the whole row. */
-  #pipelineWrap .step-grid:nth-of-type(even),
-  #flowWrap .step-grid:nth-of-type(even){ direction: rtl; }
-  #pipelineWrap .step-grid:nth-of-type(even) .stepcard,
-  #flowWrap .step-grid:nth-of-type(even) .stepcard{ direction: ltr; }
-
-  .stepcard{ position:relative; background:var(--white); border:1px solid var(--ink-200); border-radius:16px; padding:20px 20px 16px; min-height:150px; display:flex; flex-direction:column; }
-  .stepcard .num{ position:absolute; top:-11px; left:16px; width:23px; height:23px; border-radius:50%; background:var(--ink-900); color:#fff; font-size:10.5px; font-weight:800; display:flex; align-items:center; justify-content:center; font-family:var(--mono); }
-  .stepcard .ic-wrap{ width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; flex-shrink:0; }
-  .stepcard .ic-wrap img{ width:21px; height:21px; }
-  .stepcard b.t{ font-size:13.5px; font-weight:700; color:var(--ink-900); margin:0 0 5px; line-height:1.3; display:block; }
-  .stepcard p{ font-size:11.5px; color:var(--ink-500); line-height:1.5; margin:0; }
-  .stepcard .tech-tag{ font-size:9.5px; font-family:var(--mono); color:var(--ink-400); background:var(--ink-50); padding:3px 8px; border-radius:6px; display:inline-block; margin-top:10px; align-self:flex-start; }
-
-  /* architecture node: same box metrics as stepcard, row icon+text content */
-  .node{ position:relative; background:var(--white); border:1px solid var(--ink-200); border-radius:16px; padding:20px; min-height:150px; display:flex; gap:14px; align-items:center; }
-  .node .ic-wrap{ width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .node .ic-wrap img{ width:21px; height:21px; }
-  .node b{ display:block; font-size:13.5px; font-weight:700; color:var(--ink-900); line-height:1.3; }
-  .node p{ margin:5px 0 0; font-size:11.5px; color:var(--ink-500); line-height:1.5; }
-  .t-blue .layer-tag{ background:var(--accent); } .t-blue .ic-wrap{ background:var(--accent-soft); }
-  .t-teal .layer-tag{ background:var(--teal); } .t-teal .ic-wrap{ background:var(--teal-soft); }
-  .t-amber .layer-tag{ background:var(--amber); } .t-amber .ic-wrap{ background:var(--amber-soft); }
-  .t-rose .layer-tag{ background:var(--rose); } .t-rose .ic-wrap{ background:var(--rose-soft); }
-
-  /* ---------- stack ---------- */
+  /* stack */
   .stack-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
-  .stack-card{ background:var(--white); border:1px solid var(--ink-200); border-radius:16px; padding:24px; text-align:center; }
-  .stack-card .logo{ width:40px; height:40px; margin:0 auto 12px; }
-  .stack-card b{ display:block; font-size:13.5px; color:var(--ink-900); }
-  .stack-card span{ font-size:11px; color:var(--ink-400); }
+  .stack-card{ background:#fff; border:1px solid var(--ink-200); border-radius:16px; padding:22px; text-align:center; }
+  .stack-card .logo{ width:38px; height:38px; margin:0 auto 12px; }
+  .stack-card b{ display:block; font-size:14px; }
+  .stack-card span{ font-size:12px; color:var(--ink-400); }
 
-  /* ---------- security ---------- */
+  /* security */
   .sec-wrap{ display:grid; grid-template-columns:240px 1fr; gap:48px; align-items:center; }
   .sec-ring{ position:relative; width:220px; height:220px; margin:0 auto; }
   .sec-ring svg{ width:100%; height:100%; transform:rotate(-90deg); }
   .ring-bg{ fill:none; stroke:var(--ink-100); stroke-width:12; }
-  .ring-fg{ fill:none; stroke:var(--emerald); stroke-width:12; stroke-linecap:round; stroke-dasharray:566; stroke-dashoffset:566; }
+  .ring-fg{ fill:none; stroke:var(--emerald); stroke-width:12; stroke-linecap:round; stroke-dasharray:566; stroke-dashoffset:0; }
+  .js-ready .ring-fg{ stroke-dashoffset:566; }
   .ring-label{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-  .ring-label b{ font-size:38px; font-weight:800; color:var(--ink-900); letter-spacing:-0.02em; }
+  .ring-label b{ font-size:38px; font-weight:800; }
   .ring-label span{ font-size:11px; color:var(--ink-400); text-align:center; margin-top:4px; line-height:1.4; }
   .sec-list{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .sec-row{ display:flex; gap:14px; align-items:flex-start; padding:16px 18px; border:1px solid var(--ink-200); border-radius:14px; }
-  .sec-row .ic-wrap{ width:38px; height:38px; border-radius:10px; background:var(--emerald-soft); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .sec-row .ic-wrap img{ width:20px; height:20px; }
-  .sec-row b{ display:block; font-size:13px; color:var(--ink-900); }
-  .sec-row p{ margin:3px 0 0; font-size:11.5px; color:var(--ink-500); line-height:1.5; }
+  .sec-row{ display:flex; gap:14px; align-items:flex-start; padding:16px 18px; border:1px solid var(--ink-200); border-radius:14px; background:#fff; }
+  .sec-row .ic{ width:38px; height:38px; border-radius:10px; background:var(--emerald-soft); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .sec-row .ic img{ width:20px; height:20px; filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg); }
+  .sec-row b{ display:block; font-size:13.5px; }
+  .sec-row p{ margin:3px 0 0; font-size:12px; color:var(--ink-500); line-height:1.5; }
 
-  /* ---------- deployment ---------- */
-  .deploy{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
-  .deploy-box{ border-radius:18px; padding:26px; }
-  .deploy-box.on{ background:var(--ink-900); }
-  .deploy-box.off{ background:var(--ink-50); border:1.5px dashed var(--ink-300); }
-  .dep-title{ display:flex; align-items:center; gap:10px; margin-bottom:16px; }
-  .deploy-box.on .dep-title b{ color:#fff; font-size:14px; }
-  .deploy-box.off .dep-title b{ color:var(--ink-900); font-size:14px; }
-  .dep-row{ display:flex; align-items:center; gap:10px; padding:10px 0; font-size:12.5px; }
-  .deploy-box.on .dep-row{ color:#c1c9d6; border-bottom:1px solid #26334a; }
-  .deploy-box.off .dep-row{ color:var(--ink-500); border-bottom:1px solid var(--ink-200); }
-  .dep-row:last-child{ border-bottom:none; }
-  .dep-row img{ width:16px; height:16px; flex-shrink:0; }
-
-  footer{ padding:36px 0; border-top:1px solid var(--ink-200); text-align:center; font-size:11.5px; color:var(--ink-400); }
+  .js-ready .reveal{ opacity:0; transform:translateY(14px); }
+  footer{ padding:36px 0; border-top:1px solid var(--ink-200); text-align:center; font-size:12px; color:var(--ink-400); }
 
   @media (max-width:1080px){
-    .wrap{ padding:0 24px; }
-    .step-grid{ grid-template-columns:repeat(2,1fr); }
+    .wrap{ padding:0 20px; }
     .stack-grid{ grid-template-columns:repeat(2,1fr); }
     .sec-wrap{ grid-template-columns:1fr; }
     .sec-list{ grid-template-columns:1fr; }
-    .deploy{ grid-template-columns:1fr; }
-  }
-  @media (max-width:640px){
-    .step-grid{ grid-template-columns:1fr; }
-    .stack-grid{ grid-template-columns:1fr; }
+    .canvas{ padding:8px; }
   }
 </style>
 </head>
@@ -156,222 +94,71 @@
   </div>
 </header>
 
-<!-- ============ DOCUMENT INTELLIGENCE PIPELINE ============ -->
-<section id="pipeline" class="band">
+<section>
   <div class="wrap">
-    <h2>Document Intelligence Pipeline</h2>
-    <p class="cap">Twelve deterministic stages — a scanned page to a certified, cited figure. Arrows trace the exact order data moves through.</p>
-
-    <div class="step-wrap" id="pipelineWrap">
-      <svg class="step-arrows" id="pipelineArrows"></svg>
-
-      <div class="step-grid">
-        <div class="stepcard reveal"><span class="num">01</span><span class="ic-wrap" style="background:var(--accent-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/upload-bold.svg" style="filter:invert(19%) sepia(84%) saturate(3900%) hue-rotate(232deg);"></span><b class="t">Ingestion</b><p>PDF, XLSX, CSV, scanned images — SHA-256 checksum on upload.</p><span class="tech-tag">multipart/form-data</span></div>
-        <div class="stepcard reveal"><span class="num">02</span><span class="ic-wrap" style="background:var(--accent-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/scan-bold.svg" style="filter:invert(19%) sepia(84%) saturate(3900%) hue-rotate(232deg);"></span><b class="t">OCR &amp; Layout Analysis</b><p>Native text extraction, deskew, table boundary detection.</p><span class="tech-tag">PyMuPDF</span></div>
-        <div class="stepcard reveal"><span class="num">03</span><span class="ic-wrap" style="background:var(--teal-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/table-bold.svg" style="filter:invert(37%) sepia(97%) saturate(432%) hue-rotate(131deg);"></span><b class="t">Table &amp; Cell Mapping</b><p>Spreadsheet grids parsed to sheet!cell references.</p><span class="tech-tag">openpyxl</span></div>
-      </div>
-
-      <div class="step-grid">
-        <div class="stepcard reveal"><span class="num">04</span><span class="ic-wrap" style="background:var(--teal-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/brain-bold.svg" style="filter:invert(37%) sepia(97%) saturate(432%) hue-rotate(131deg);"></span><b class="t">NLP Extraction</b><p>Entity &amp; metric ID, header association, unit normalization.</p><span class="tech-tag">rule-based NER</span></div>
-        <div class="stepcard reveal"><span class="num">05</span><span class="ic-wrap" style="background:var(--amber-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/calculator-bold.svg" style="filter:invert(29%) sepia(54%) saturate(1731%) hue-rotate(2deg);"></span><b class="t">Deterministic Validation</b><p>Variance &amp; totals — unit-tested, never predicted.</p><span class="tech-tag">calculation_engine.py</span></div>
-        <div class="stepcard reveal"><span class="num">06</span><span class="ic-wrap" style="background:var(--amber-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/warning-bold.svg" style="filter:invert(29%) sepia(54%) saturate(1731%) hue-rotate(2deg);"></span><b class="t">Plausibility &amp; Anomaly Scan</b><p>Flags figures unprompted — zero target vs. non-zero actual.</p><span class="tech-tag">RULE-ANOM-0x</span></div>
-      </div>
-
-      <div class="step-grid">
-        <div class="stepcard reveal"><span class="num">07</span><span class="ic-wrap" style="background:var(--accent-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/database-bold.svg" style="filter:invert(19%) sepia(84%) saturate(3900%) hue-rotate(232deg);"></span><b class="t">Canonical Fact Store</b><p>Sealed facts with document, page, bbox, content hash.</p><span class="tech-tag">fact_store.py</span></div>
-        <div class="stepcard reveal"><span class="num">08</span><span class="ic-wrap" style="background:var(--teal-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/magnifying-glass-bold.svg" style="filter:invert(37%) sepia(97%) saturate(432%) hue-rotate(131deg);"></span><b class="t">Retrieval &amp; Grounded QA</b><p>Query-matched retrieval, citation-backed answers.</p><span class="tech-tag">qa_engine.py</span></div>
-        <div class="stepcard reveal"><span class="num">09</span><span class="ic-wrap" style="background:var(--rose-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/git-merge-bold.svg" style="filter:invert(15%) sepia(80%) saturate(3900%) hue-rotate(324deg);"></span><b class="t">Conflict Reconciliation</b><p>Provisional vs. audited surfaced for certification.</p><span class="tech-tag">RULE-CON-04</span></div>
-      </div>
-
-      <div class="step-grid">
-        <div class="stepcard reveal"><span class="num">10</span><span class="ic-wrap" style="background:var(--accent-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/tag-bold.svg" style="filter:invert(19%) sepia(84%) saturate(3900%) hue-rotate(232deg);"></span><b class="t">Topic &amp; Word Cloud</b><p>Phrase clustering, trend + drill-down to passages.</p><span class="tech-tag">topic_service.py</span></div>
-        <div class="stepcard reveal"><span class="num">11</span><span class="ic-wrap" style="background:var(--emerald-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/user-check-bold.svg" style="filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);"></span><b class="t">Human Sign-Off</b><p>Named officer certifies; decision sealed to ledger.</p><span class="tech-tag">review_workbench</span></div>
-        <div class="stepcard reveal"><span class="num">12</span><span class="ic-wrap" style="background:var(--emerald-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/export-bold.svg" style="filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);"></span><b class="t">Export &amp; Distribution</b><p>Gazette-formatted briefing note — print, DOCX, PDF.</p><span class="tech-tag">report_service.py</span></div>
-      </div>
+    <h2>1 · Document Intelligence Pipeline</h2>
+    <p class="cap">How a scanned coal report becomes a certified, cited figure. Follow the arrows: every label says what data is moving at that step.</p>
+    <div class="canvas"><svg id="pipe" role="img" aria-label="Document intelligence pipeline diagram"></svg></div>
+    <div class="legend">
+      <span><i></i> data flow</span>
+      <span><i class="dash"></i> flagged for a human</span>
+      <span><i class="db"></i> data store</span>
+      <span><i class="note"></i> design guarantee</span>
     </div>
   </div>
 </section>
 
-<!-- ============ SYSTEM ARCHITECTURE ============ -->
-<section id="architecture">
+<section class="band">
   <div class="wrap">
-    <h2>System Architecture</h2>
-    <p class="cap">Five layers, deployment boundary to browser — no layer calls outside the network perimeter.</p>
-
-    <div class="panel" style="padding:34px 34px 26px;">
-
-      <div class="layer t-blue">
-        <div class="layer-label">
-          <span class="layer-tag">01 · Experience</span>
-          <span class="layer-title">Presentation Layer</span>
-          <span class="layer-desc">React · Vite · Tailwind</span>
-        </div>
-        <div class="step-grid">
-          <div class="node reveal"><span class="ic-wrap" style="color:var(--accent);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/monitor-bold.svg"></span><div><b>Officer Portal</b><p>Demo journey, evidence library, review queue</p></div></div>
-          <div class="node reveal"><span class="ic-wrap" style="color:var(--accent);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/file-text-bold.svg"></span><div><b>Coordinate Document Viewer</b><p>PDF + XLSX render with bbox overlay</p></div></div>
-          <div class="node reveal"><span class="ic-wrap" style="color:var(--accent);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/chats-bold.svg"></span><div><b>AI Query Console</b><p>Full-text + metadata search</p></div></div>
-        </div>
-        <div class="step-grid">
-          <div class="node reveal"><span class="ic-wrap" style="color:var(--accent);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/tag-bold.svg"></span><div><b>Word Cloud &amp; Topics</b><p>Trend-weighted phrase explorer</p></div></div>
-        </div>
-      </div>
-
-      <div class="layer">
-        <div class="layer-label">
-          <span class="layer-tag" style="background:var(--ink-700);">02 · Access</span>
-          <span class="layer-title">API Gateway</span>
-          <span class="layer-desc">FastAPI · REST · role-scoped</span>
-        </div>
-        <div class="step-grid">
-          <div class="node reveal"><span class="ic-wrap" style="background:var(--ink-100);color:var(--ink-700);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/path-bold.svg"></span><div><b>REST Gateway</b><p>Typed request/response contracts</p></div></div>
-          <div class="node reveal"><span class="ic-wrap" style="background:var(--ink-100);color:var(--ink-700);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/users-bold.svg"></span><div><b>Role-Based Access</b><p>5 officer personas, scoped permissions</p></div></div>
-          <div class="node reveal"><span class="ic-wrap" style="background:var(--ink-100);color:var(--ink-700);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/clock-counter-clockwise-bold.svg"></span><div><b>Audit Middleware</b><p>Every call logged to the SHA-256 chain</p></div></div>
-        </div>
-      </div>
-
-      <div class="layer t-teal">
-        <div class="layer-label">
-          <span class="layer-tag">03 · Intelligence</span>
-          <span class="layer-title">Document &amp; Reasoning Services</span>
-          <span class="layer-desc">deterministic — zero external model calls</span>
-        </div>
-        <div class="step-grid">
-          <div class="node reveal"><span class="ic-wrap" style="color:var(--teal);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/scan-bold.svg"></span><div><b>OCR &amp; Layout Engine</b><p>Native text + scanned-page OCR fallback</p></div></div>
-          <div class="node reveal"><span class="ic-wrap" style="color:var(--teal);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/brain-bold.svg"></span><div><b>NLP Extraction</b><p>Entity &amp; metric / table-cell association</p></div></div>
-          <div class="node reveal"><span class="ic-wrap" style="color:var(--teal);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/calculator-bold.svg"></span><div><b>Calculation Engine</b><p>Variance, totals, plausibility — unit-tested</p></div></div>
-        </div>
-        <div class="step-grid">
-          <div class="node reveal"><span class="ic-wrap" style="color:var(--teal);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/magnifying-glass-bold.svg"></span><div><b>Retrieval &amp; QA Engine</b><p>Hybrid retrieval, template grounding</p></div></div>
-          <div class="node reveal"><span class="ic-wrap" style="color:var(--teal);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/git-merge-bold.svg"></span><div><b>Conflict Detection</b><p>Surfaces disagreement, never averages</p></div></div>
-          <div class="node reveal"><span class="ic-wrap" style="color:var(--teal);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/warning-bold.svg"></span><div><b>Anomaly Scanner</b><p>Physical-plausibility checks, unprompted</p></div></div>
-        </div>
-      </div>
-
-      <div class="layer t-amber">
-        <div class="layer-label">
-          <span class="layer-tag">04 · State</span>
-          <span class="layer-title">Governed Data Layer</span>
-          <span class="layer-desc">every fact traceable to page · cell · hash</span>
-        </div>
-        <div class="step-grid">
-          <div class="node reveal"><span class="ic-wrap" style="color:var(--amber);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/database-bold.svg"></span><div><b>Canonical Fact Store</b><p>Normalized metrics, approval lifecycle</p></div></div>
-          <div class="node reveal"><span class="ic-wrap" style="color:var(--amber);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/file-text-bold.svg"></span><div><b>Evidence Index</b><p>Page, bbox, sheet!cell provenance</p></div></div>
-          <div class="node reveal"><span class="ic-wrap" style="color:var(--amber);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/clipboard-text-bold.svg"></span><div><b>Review Task Queue</b><p>Conflicts, anomalies, verifications</p></div></div>
-        </div>
-        <div class="step-grid">
-          <div class="node reveal"><span class="ic-wrap" style="color:var(--amber);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/key-bold.svg"></span><div><b>Audit Ledger</b><p>SHA-256 chained event log</p></div></div>
-        </div>
-      </div>
-
-      <div class="layer t-rose" style="border-bottom:none; margin-bottom:0;">
-        <div class="layer-label">
-          <span class="layer-tag">05 · Infra</span>
-          <span class="layer-title">Deployment Boundary</span>
-          <span class="layer-desc">intranet / NIC MeghRaj — no internet egress</span>
-        </div>
-        <div class="step-grid">
-          <div class="node reveal"><span class="ic-wrap" style="color:var(--rose);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/hard-drives-bold.svg"></span><div><b>On-Premise / Air-Gapped</b><p>CMPDI Regional Institute intranet</p></div></div>
-          <div class="node reveal"><span class="ic-wrap" style="color:var(--rose);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/cloud-bold.svg"></span><div><b>NIC MeghRaj (optional)</b><p>Empanelled cloud, no public egress</p></div></div>
-          <div class="node reveal"><span class="ic-wrap" style="color:var(--rose);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/lock-bold.svg"></span><div><b>Network Isolation</b><p>Zero outbound calls in request path</p></div></div>
-        </div>
-      </div>
-
-    </div>
+    <h2>2 · System Architecture</h2>
+    <p class="cap">Everything runs inside the government network boundary. No component calls an outside AI service.</p>
+    <div class="canvas"><svg id="arch" role="img" aria-label="System architecture diagram"></svg></div>
   </div>
 </section>
 
-<!-- ============ REQUEST FLOW ============ -->
-<section id="flow-section" class="band">
+<section>
   <div class="wrap">
-    <h2>Request Lifecycle</h2>
-    <p class="cap">One inquiry, start to finish — same card size as the pipeline above, same arrow logic.</p>
-
-    <div class="step-wrap" id="flowWrap">
-      <svg class="step-arrows" id="flowArrows"></svg>
-
-      <div class="step-grid">
-        <div class="stepcard reveal"><span class="num">01</span><span class="ic-wrap" style="background:var(--accent-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/users-bold.svg" style="filter:invert(19%) sepia(84%) saturate(3900%) hue-rotate(232deg);"></span><b class="t">Officer Submits Inquiry</b><p>Ministry request entered via portal or AI Query console.</p><span class="tech-tag">Portal / AI Query</span></div>
-        <div class="stepcard reveal"><span class="num">02</span><span class="ic-wrap" style="background:var(--teal-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/magnifying-glass-bold.svg" style="filter:invert(37%) sepia(97%) saturate(432%) hue-rotate(131deg);"></span><b class="t">Retrieval &amp; Grounding</b><p>Query matched against the governed fact store.</p><span class="tech-tag">qa_engine.py</span></div>
-        <div class="stepcard reveal"><span class="num">03</span><span class="ic-wrap" style="background:var(--amber-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/calculator-bold.svg" style="filter:invert(29%) sepia(54%) saturate(1731%) hue-rotate(2deg);"></span><b class="t">Deterministic Calculation</b><p>Variance and totals computed, never predicted.</p><span class="tech-tag">variance · totals</span></div>
-      </div>
-
-      <div class="step-grid">
-        <div class="stepcard reveal"><span class="num">04</span><span class="ic-wrap" style="background:var(--rose-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/git-merge-bold.svg" style="filter:invert(15%) sepia(80%) saturate(3900%) hue-rotate(324deg);"></span><b class="t">Conflict Check</b><p>Disagreeing sources surfaced, never averaged.</p><span class="tech-tag">RULE-CON-04</span></div>
-        <div class="stepcard reveal"><span class="num">05</span><span class="ic-wrap" style="background:var(--emerald-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/user-check-bold.svg" style="filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);"></span><b class="t">Officer Certifies</b><p>Named domain officer signs off on the figure.</p><span class="tech-tag">named, logged</span></div>
-        <div class="stepcard reveal"><span class="num">06</span><span class="ic-wrap" style="background:var(--ink-100);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/export-bold.svg" style="filter:invert(15%) sepia(8%) saturate(700%) hue-rotate(180deg);"></span><b class="t">Report Frozen &amp; Exported</b><p>Immutable snapshot generated for distribution.</p><span class="tech-tag">SHA-256 snapshot</span></div>
-      </div>
-    </div>
+    <h2>3 · Request Lifecycle</h2>
+    <p class="cap">One Parliamentary or Ministry question, step by step — from the officer asking it to a signed briefing note.</p>
+    <div class="canvas"><svg id="life" role="img" aria-label="Request lifecycle diagram"></svg></div>
   </div>
 </section>
 
-<!-- ============ TECH STACK ============ -->
-<section id="stack">
+<section class="band">
   <div class="wrap">
     <h2>Technology Stack</h2>
-    <p class="cap">Verifiable, offline-capable technology — nothing here needs a paid API key.</p>
+    <p class="cap">Open, offline-capable technology — nothing here needs a paid API key.</p>
     <div class="stack-grid">
-      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/react/58C4DC" alt="React"><b>React 18</b><span>Frontend UI</span></div>
-      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/typescript/3178C6" alt="TypeScript"><b>TypeScript</b><span>Type-safe app code</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/react/58C4DC" alt="React"><b>React 18</b><span>Officer portal</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/typescript/3178C6" alt="TypeScript"><b>TypeScript</b><span>Type-safe UI code</span></div>
       <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/vite/B989FF" alt="Vite"><b>Vite</b><span>Build tooling</span></div>
       <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/tailwindcss/38BDF8" alt="Tailwind CSS"><b>Tailwind CSS</b><span>Design system</span></div>
-      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/fastapi/019486" alt="FastAPI"><b>FastAPI</b><span>Backend REST API</span></div>
-      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/python/4B8BBE" alt="Python"><b>Python 3.12</b><span>Service layer</span></div>
-      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/pydantic/E92063" alt="Pydantic"><b>Pydantic</b><span>Typed contracts</span></div>
-      <div class="stack-card reveal"><img class="logo" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/database-bold.svg" alt="Fact Store" style="filter:invert(29%) sepia(54%) saturate(1731%) hue-rotate(2deg);"><b>Fact Store</b><span>Governed data layer</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/fastapi/019486" alt="FastAPI"><b>FastAPI</b><span>REST API gateway</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/python/4B8BBE" alt="Python"><b>Python</b><span>Processing services</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/pydantic/E92063" alt="Pydantic"><b>Pydantic</b><span>Typed data contracts</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/scan-bold.svg" alt="OCR" style="filter:invert(37%) sepia(97%) saturate(432%) hue-rotate(131deg);"><b>PyMuPDF + OCR</b><span>Document parsing</span></div>
     </div>
   </div>
 </section>
 
-<!-- ============ SECURITY ============ -->
-<section id="security" class="band">
+<section>
   <div class="wrap">
     <h2>Security &amp; Compliance</h2>
-    <p class="cap">Properties of the architecture, not bolt-on policy.</p>
-
+    <p class="cap">Properties of the architecture itself, not bolt-on policy.</p>
     <div class="sec-wrap">
       <div class="sec-ring" id="secRing">
-        <svg viewBox="0 0 200 200">
-          <circle class="ring-bg" cx="100" cy="100" r="90"/>
-          <circle class="ring-fg" id="ringFg" cx="100" cy="100" r="90"/>
-        </svg>
-        <div class="ring-label"><b id="ringNum">0/8</b><span>Hard Acceptance<br>Gates Passing</span></div>
+        <svg viewBox="0 0 200 200"><circle class="ring-bg" cx="100" cy="100" r="90"/><circle class="ring-fg" id="ringFg" cx="100" cy="100" r="90"/></svg>
+        <div class="ring-label"><b id="ringNum">8/8</b><span>Hard acceptance<br>gates passing</span></div>
       </div>
-
       <div class="sec-list">
-        <div class="sec-row reveal"><span class="ic-wrap"><img class="icon" style="width:20px;height:20px;filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/cloud-slash-bold.svg"></span><div><b>Zero external calls</b><p>No LLM or inference API in the request path.</p></div></div>
-        <div class="sec-row reveal"><span class="ic-wrap"><img class="icon" style="width:20px;height:20px;filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/users-bold.svg"></span><div><b>Role-based access</b><p>Five officer personas, each scoped.</p></div></div>
-        <div class="sec-row reveal"><span class="ic-wrap"><img class="icon" style="width:20px;height:20px;filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/clock-counter-clockwise-bold.svg"></span><div><b>Immutable audit trail</b><p>SHA-256 chained, tamper-evident.</p></div></div>
-        <div class="sec-row reveal"><span class="ic-wrap"><img class="icon" style="width:20px;height:20px;filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/shield-check-bold.svg"></span><div><b>100% provenance</b><p>Every figure traces to page + cell.</p></div></div>
-        <div class="sec-row reveal"><span class="ic-wrap"><img class="icon" style="width:20px;height:20px;filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/git-merge-bold.svg"></span><div><b>No silent averaging</b><p>Conflicts require named certification.</p></div></div>
-        <div class="sec-row reveal"><span class="ic-wrap"><img class="icon" style="width:20px;height:20px;filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/lock-bold.svg"></span><div><b>Cross-subsidiary isolation</b><p>No cross-contamination between CIL lines.</p></div></div>
-        <div class="sec-row reveal"><span class="ic-wrap"><img class="icon" style="width:20px;height:20px;filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/warning-bold.svg"></span><div><b>Safe abstention</b><p>Unanswerable queries explicitly refused.</p></div></div>
-        <div class="sec-row reveal"><span class="ic-wrap"><img class="icon" style="width:20px;height:20px;filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/globe-bold.svg"></span><div><b>CERT-In aligned</b><p>Air-gapped posture, audit logging.</p></div></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ DEPLOYMENT ============ -->
-<section id="deployment">
-  <div class="wrap">
-    <h2>Deployment Posture</h2>
-    <p class="cap">Same platform, network on or off — the answer path never depends on internet access.</p>
-    <div class="deploy">
-      <div class="deploy-box on reveal">
-        <div class="dep-title"><img class="icon" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/hard-drives-bold.svg" style="filter:invert(66%) sepia(57%) saturate(451%) hue-rotate(101deg);"><b>What Runs</b></div>
-        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/check-bold.svg" style="filter:invert(66%) sepia(57%) saturate(451%) hue-rotate(101deg);"> FastAPI service layer (deterministic)</div>
-        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/check-bold.svg" style="filter:invert(66%) sepia(57%) saturate(451%) hue-rotate(101deg);"> Document parsing &amp; OCR engine</div>
-        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/check-bold.svg" style="filter:invert(66%) sepia(57%) saturate(451%) hue-rotate(101deg);"> Canonical fact store + evidence index</div>
-        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/check-bold.svg" style="filter:invert(66%) sepia(57%) saturate(451%) hue-rotate(101deg);"> Officer portal (static React SPA)</div>
-        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/check-bold.svg" style="filter:invert(66%) sepia(57%) saturate(451%) hue-rotate(101deg);"> SHA-256 audit ledger</div>
-      </div>
-      <div class="deploy-box off reveal">
-        <div class="dep-title"><img class="icon" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/cloud-slash-bold.svg" style="filter:invert(15%) sepia(80%) saturate(3900%) hue-rotate(324deg);"><b>Never Required</b></div>
-        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/x-bold.svg" style="filter:invert(15%) sepia(80%) saturate(3900%) hue-rotate(324deg);"> External LLM / inference API</div>
-        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/x-bold.svg" style="filter:invert(15%) sepia(80%) saturate(3900%) hue-rotate(324deg);"> Third-party cloud search service</div>
-        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/x-bold.svg" style="filter:invert(15%) sepia(80%) saturate(3900%) hue-rotate(324deg);"> Outbound internet egress in request path</div>
-        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/x-bold.svg" style="filter:invert(15%) sepia(80%) saturate(3900%) hue-rotate(324deg);"> Vendor API keys or usage billing</div>
-        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/x-bold.svg" style="filter:invert(15%) sepia(80%) saturate(3900%) hue-rotate(324deg);"> Document content leaving the boundary</div>
+        <div class="sec-row reveal"><span class="ic"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/cloud-slash-bold.svg" alt=""></span><div><b>Zero external calls</b><p>No outside AI or inference service in the request path.</p></div></div>
+        <div class="sec-row reveal"><span class="ic"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/users-bold.svg" alt=""></span><div><b>Role-based access</b><p>Five officer roles, each scoped to its own work.</p></div></div>
+        <div class="sec-row reveal"><span class="ic"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/clock-counter-clockwise-bold.svg" alt=""></span><div><b>Tamper-evident audit trail</b><p>Every decision is hash-chained and logged.</p></div></div>
+        <div class="sec-row reveal"><span class="ic"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/shield-check-bold.svg" alt=""></span><div><b>Full provenance</b><p>Every figure traces back to a page and cell.</p></div></div>
+        <div class="sec-row reveal"><span class="ic"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/git-merge-bold.svg" alt=""></span><div><b>No silent averaging</b><p>Conflicting figures always go to a named officer.</p></div></div>
+        <div class="sec-row reveal"><span class="ic"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/lock-bold.svg" alt=""></span><div><b>Subsidiary isolation</b><p>No cross-contamination between CIL subsidiaries.</p></div></div>
+        <div class="sec-row reveal"><span class="ic"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/warning-bold.svg" alt=""></span><div><b>Safe abstention</b><p>Unanswerable questions are refused, never guessed.</p></div></div>
+        <div class="sec-row reveal"><span class="ic"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/hard-drives-bold.svg" alt=""></span><div><b>Air-gapped ready</b><p>Runs on a CMPDI intranet or NIC MeghRaj cloud.</p></div></div>
       </div>
     </div>
   </div>
@@ -379,85 +166,337 @@
 
 <footer>Coal Reporting Intelligence Platform · SIH 2026 · Problem Statement 26023 · Ministry of Coal</footer>
 
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
 <script>
-gsap.registerPlugin(ScrollTrigger);
+/* ===================== Excalidraw-style diagram renderer ===================== */
+const NS = "http://www.w3.org/2000/svg";
+const ICON = n => `https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/${n}-bold.svg`;
+const INK = "#1e1e1e";
+const PAL = {
+  blue:{f:"#a5d8ff",s:"#1971c2"}, teal:{f:"#96f2d7",s:"#0c8599"}, green:{f:"#b2f2bb",s:"#2f9e44"},
+  yellow:{f:"#ffec99",s:"#f08c00"}, orange:{f:"#ffd8a8",s:"#e8590c"}, red:{f:"#ffc9c9",s:"#e03131"},
+  violet:{f:"#d0bfff",s:"#6741d9"}, gray:{f:"#e9ecef",s:"#495057"}, pink:{f:"#fcc2d7",s:"#c2255c"}
+};
 
-/* Scroll fade-in — the only motion on this page. Adding this class is what
-   turns on the CSS opacity:0 baseline, so it only ever applies once GSAP
-   has actually loaded and is about to drive the reveal itself. */
-document.documentElement.classList.add("js-ready");
-gsap.set(".reveal", { opacity: 0, y: 14 });
-ScrollTrigger.batch(".reveal", {
-  start: "top 88%",
-  onEnter: batch => gsap.to(batch, { opacity: 1, y: 0, duration: .55, ease: "power2.out", stagger: 0.05 }),
-  once: true
-});
+function el(tag, attrs, parent){
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
 
-/* Security ring: one-time draw + count-up. */
-ScrollTrigger.create({
-  trigger: "#secRing", start: "top 80%", once: true,
-  onEnter: () => {
-    gsap.to("#ringFg", { strokeDashoffset: 0, duration: 1.4, ease: "power2.out" });
-    const counter = { v: 0 };
-    gsap.to(counter, {
-      v: 8, duration: 1.4, ease: "power2.out",
-      onUpdate: () => document.getElementById("ringNum").textContent = Math.round(counter.v) + "/8"
-    });
+// Draws a path with rough.js when available; falls back to a clean plain SVG
+// path if the rough.js CDN is ever blocked, so the diagram never disappears.
+function makeDrawer(svg){
+  const rc = (window.rough && rough.svg) ? rough.svg(svg) : null;
+  let seed = 7;
+  return (d, o = {}, parent) => {
+    seed += 3;
+    const opts = { stroke: o.stroke || INK, strokeWidth: o.sw || 1.6, roughness: o.rough ?? 1.1, bowing: 0.7, seed,
+      fill: o.fill, fillStyle: "solid", strokeLineDash: o.dash };
+    let node;
+    if (rc) node = rc.path(d, opts);
+    else node = el("path", { d, fill: o.fill || "none", stroke: opts.stroke, "stroke-width": opts.strokeWidth,
+      "stroke-dasharray": o.dash ? o.dash.join(" ") : "none", "stroke-linejoin": "round" });
+    parent.appendChild(node);
+    return node;
+  };
+}
+
+const rr = (x,y,w,h,r) => `M${x+r},${y} L${x+w-r},${y} Q${x+w},${y} ${x+w},${y+r} L${x+w},${y+h-r} Q${x+w},${y+h} ${x+w-r},${y+h} L${x+r},${y+h} Q${x},${y+h} ${x},${y+h-r} L${x},${y+r} Q${x},${y} ${x+r},${y} Z`;
+const ell = (cx,cy,rx,ry) => `M${cx-rx},${cy} A${rx},${ry} 0 1 0 ${cx+rx},${cy} A${rx},${ry} 0 1 0 ${cx-rx},${cy} Z`;
+const cloudPath = (x,y,w,h) => `M${x+.22*w},${y+.88*h} C${x-.04*w},${y+.88*h} ${x-.04*w},${y+.46*h} ${x+.2*w},${y+.44*h} C${x+.18*w},${y+.1*h} ${x+.52*w},${y+.02*h} ${x+.6*w},${y+.28*h} C${x+.7*w},${y+.08*h} ${x+1.0*w},${y+.18*h} ${x+.88*w},${y+.5*h} C${x+1.06*w},${y+.56*h} ${x+1.04*w},${y+.88*h} ${x+.84*w},${y+.88*h} Z`;
+
+function text(parent, x, y, str, o = {}){
+  const t = el("text", { x, y, "text-anchor": o.anchor || "middle", "dominant-baseline": "middle",
+    "font-family": "Virgil, 'Segoe Print', 'Comic Sans MS', cursive", "font-size": o.size || 18,
+    fill: o.color || INK }, parent);
+  const lines = String(str).split("\n");
+  const lh = (o.size || 18) * 1.25;
+  lines.forEach((ln, i) => {
+    const ts = el("tspan", { x, dy: i === 0 ? -((lines.length - 1) * lh) / 2 : lh }, t);
+    ts.textContent = ln;
+  });
+  return t;
+}
+
+function box(n){ // normalise circles to a bounding box so ports work the same
+  if (n.t === "circle") return { x: n.cx - n.r, y: n.cy - n.r, w: 2*n.r, h: 2*n.r };
+  return { x: n.x, y: n.y, w: n.w, h: n.h };
+}
+function port(n, side, off = 0){
+  const b = box(n);
+  if (side === "l") return [b.x, b.y + b.h/2 + off];
+  if (side === "r") return [b.x + b.w, b.y + b.h/2 + off];
+  if (side === "t") return [b.x + b.w/2 + off, b.y];
+  return [b.x + b.w/2 + off, b.y + b.h];
+}
+function route(p1, s1, p2, s2, e){
+  if (e.via) return [p1, ...e.via, p2];
+  const H = s => s === "l" || s === "r";
+  if (H(s1) && H(s2)) {
+    if (Math.abs(p1[1]-p2[1]) < 2) return [p1, p2];
+    const mx = e.mx ?? (p1[0]+p2[0])/2;
+    return [p1, [mx,p1[1]], [mx,p2[1]], p2];
   }
-});
+  if (!H(s1) && !H(s2)) {
+    if (Math.abs(p1[0]-p2[0]) < 2) return [p1, p2];
+    const my = e.my ?? (p1[1]+p2[1])/2;
+    return [p1, [p1[0],my], [p2[0],my], p2];
+  }
+  if (H(s1)) return [p1, [p2[0],p1[1]], p2];
+  return [p1, [p1[0],p2[1]], p2];
+}
 
-/* ---------- Static Excalidraw-style connector arrows between sequential step cards ---------- */
-function drawStepArrows(wrapId, svgId, cardSelector){
-  const wrap = document.getElementById(wrapId);
+function render(svgId, spec){
   const svg = document.getElementById(svgId);
-  if (!wrap || !svg) return;
-  const cards = Array.from(wrap.querySelectorAll(cardSelector));
-  if (cards.length < 2) return;
+  svg.innerHTML = "";
+  svg.setAttribute("viewBox", `0 0 ${spec.W} ${spec.H}`);
+  const draw = makeDrawer(svg);
+  const gFrames = el("g",{},svg), gEdges = el("g",{},svg), gNodes = el("g",{},svg), gLabels = el("g",{},svg);
+  const byId = {};
+  spec.nodes.forEach(n => byId[n.id] = n);
 
-  const wrapRect = wrap.getBoundingClientRect();
-  svg.setAttribute("width", wrap.offsetWidth);
-  svg.setAttribute("height", wrap.offsetHeight);
-  svg.setAttribute("viewBox", `0 0 ${wrap.offsetWidth} ${wrap.offsetHeight}`);
+  // Frames (dashed groupings)
+  (spec.frames || []).forEach(f => {
+    draw(rr(f.x,f.y,f.w,f.h,18), { stroke: f.color || "#868e96", dash:[9,7], sw:1.4, rough:0.6 }, gFrames);
+    text(gFrames, f.x + 16, f.y + 20, f.label, { anchor:"start", size:16, color: f.color || "#495057" });
+  });
 
-  const markerId = svgId + "-head";
-  let html = `<defs><marker id="${markerId}" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#b7c0d1"/></marker></defs>`;
-
-  for (let i = 0; i < cards.length - 1; i++) {
-    const a = cards[i].getBoundingClientRect();
-    const b = cards[i + 1].getBoundingClientRect();
-    const sameRow = Math.abs(a.top - b.top) < 4;
-    let path;
-    if (sameRow) {
-      // Direction-aware: in a snake layout, alternate rows read right-to-left,
-      // so the next card can sit to the LEFT of the previous one.
-      const aCenterX = a.left + a.width / 2, bCenterX = b.left + b.width / 2;
-      const goingRight = bCenterX >= aCenterX;
-      const x1 = (goingRight ? a.right : a.left) - wrapRect.left + (goingRight ? 2 : -2);
-      const x2 = (goingRight ? b.left : b.right) - wrapRect.left + (goingRight ? -2 : 2);
-      const y1 = a.top + a.height / 2 - wrapRect.top, y2 = b.top + b.height / 2 - wrapRect.top;
-      const mx = (x1 + x2) / 2;
-      path = `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
-    } else {
-      const x1 = a.left + a.width / 2 - wrapRect.left, y1 = a.bottom - wrapRect.top + 2;
-      const x2 = b.left + b.width / 2 - wrapRect.left, y2 = b.top - wrapRect.top - 2;
-      const my = (y1 + y2) / 2;
-      path = `M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`;
+  // Edges
+  spec.edges.forEach(e => {
+    const A = byId[e.a], B = byId[e.b];
+    const p1 = port(A, e.as, e.ao || 0), p2 = port(B, e.bs, e.bo || 0);
+    const pts = route(p1, e.as, p2, e.bs, e);
+    const col = e.col || INK;
+    draw("M" + pts.map(p => p.join(",")).join(" L"), { stroke: col, dash: e.dash ? [8,6] : undefined, sw:1.7, rough:0.8 }, gEdges);
+    // arrowhead
+    const [x2,y2] = pts[pts.length-1], [x1,y1] = pts[pts.length-2];
+    const ang = Math.atan2(y2-y1, x2-x1), L = 15, sp = 0.45;
+    const w1 = [x2 - L*Math.cos(ang - sp), y2 - L*Math.sin(ang - sp)];
+    const w2 = [x2 - L*Math.cos(ang + sp), y2 - L*Math.sin(ang + sp)];
+    draw(`M${w1[0]},${w1[1]} L${x2},${y2} L${w2[0]},${w2[1]}`, { stroke: col, sw:1.8, rough:0.5 }, gEdges);
+    if (e.both) {
+      const [a2,b2] = pts[0], [a1,b1] = pts[1];
+      const g2 = Math.atan2(b2-b1, a2-a1);
+      draw(`M${a2 - L*Math.cos(g2-sp)},${b2 - L*Math.sin(g2-sp)} L${a2},${b2} L${a2 - L*Math.cos(g2+sp)},${b2 - L*Math.sin(g2+sp)}`, { stroke: col, sw:1.8, rough:0.5 }, gEdges);
     }
-    html += `<path d="${path}" fill="none" stroke="#b7c0d1" stroke-width="2" stroke-linecap="round" marker-end="url(#${markerId})" />`;
-  }
-  svg.innerHTML = html;
+    // label
+    if (e.label) {
+      let lx, ly;
+      if (e.lp) [lx, ly] = e.lp;
+      else {
+        let best = 0, bi = 0;
+        for (let i = 0; i < pts.length-1; i++) {
+          const d = Math.hypot(pts[i+1][0]-pts[i][0], pts[i+1][1]-pts[i][1]);
+          if (d > best) { best = d; bi = i; }
+        }
+        lx = (pts[bi][0]+pts[bi+1][0])/2; ly = (pts[bi][1]+pts[bi+1][1])/2;
+      }
+      const g = el("g", {}, gLabels);
+      const bg = el("rect", { fill:"#ffffff", rx:6 }, g);
+      let offX = 0;
+      let badge;
+      if (e.num) { badge = el("g", {}, g); offX = 14; }
+      const t = text(g, lx + offX, ly, e.label, { size:15, color: e.col || "#343a40" });
+      const bb = t.getBBox();
+      const left = e.num ? bb.x - 28 : bb.x - 6;
+      bg.setAttribute("x", left); bg.setAttribute("y", bb.y - 3);
+      bg.setAttribute("width", bb.x + bb.width + 6 - left); bg.setAttribute("height", bb.height + 6);
+      if (e.num) {
+        el("circle", { cx: bb.x - 14, cy: ly, r: 11, fill: col === INK ? "#1971c2" : col }, badge);
+        const nt = el("text", { x: bb.x - 14, y: ly + 1, "text-anchor":"middle", "dominant-baseline":"middle",
+          "font-family":"Inter, sans-serif", "font-size":12, "font-weight":700, fill:"#fff" }, badge);
+        nt.textContent = e.num;
+      }
+    }
+  });
+
+  // Nodes
+  spec.nodes.forEach(n => {
+    const p = PAL[n.c || "blue"], b = box(n);
+    const cx = b.x + b.w/2;
+    let cy = b.y + b.h/2;
+    if (n.t === "circle") draw(ell(n.cx, n.cy, n.r, n.r), { fill: p.f }, gNodes);
+    else if (n.t === "db") {
+      const ry = 14;
+      draw(`M${b.x},${b.y+ry} L${b.x},${b.y+b.h-ry} A${b.w/2},${ry} 0 0 0 ${b.x+b.w},${b.y+b.h-ry} L${b.x+b.w},${b.y+ry} A${b.w/2},${ry} 0 0 0 ${b.x},${b.y+ry} Z`, { fill: p.f }, gNodes);
+      draw(ell(cx, b.y+ry, b.w/2, ry), { fill: "#ffffff" }, gNodes);
+      cy += ry/2;
+    }
+    else if (n.t === "note") draw(`M${b.x},${b.y} L${b.x+b.w},${b.y} L${b.x+b.w},${b.y+b.h} L${b.x},${b.y+b.h} Z`, { fill: PAL[n.c || "pink"].f, rough:1.4 }, gNodes);
+    else if (n.t === "cloud") draw(cloudPath(b.x,b.y,b.w,b.h), { fill: p.f }, gNodes);
+    else draw(rr(b.x,b.y,b.w,b.h,14), { fill: p.f }, gNodes);
+
+    if (n.t === "note") {
+      text(gNodes, cx, cy, n.title, { size:15, color:"#343a40" });
+    } else if (n.sub) {
+      text(gNodes, cx, cy - 11, n.title, { size: n.size || 19 });
+      text(gNodes, cx, cy + 15, n.sub, { size:13.5, color:"#495057" });
+    } else {
+      text(gNodes, cx, cy, n.title, { size: n.size || 19 });
+    }
+
+    if (n.x_mark) {
+      draw(`M${b.x+18},${b.y+14} L${b.x+b.w-18},${b.y+b.h-10}`, { stroke:"#e03131", sw:3, rough:0.6 }, gNodes);
+      draw(`M${b.x+b.w-18},${b.y+14} L${b.x+18},${b.y+b.h-10}`, { stroke:"#e03131", sw:3, rough:0.6 }, gNodes);
+    }
+
+    if (n.icon) {  // AWS-diagram style icon badge overlapping the corner
+      const s = 34, bx = b.x + b.w - s + 10, by = b.y - 12;
+      draw(rr(bx, by, s, s, 7), { fill: p.s, stroke: INK, sw:1.3, rough:0.6 }, gNodes);
+      const img = el("image", { href: ICON(n.icon), x: bx + 7, y: by + 7, width: s - 14, height: s - 14 }, gNodes);
+      img.style.filter = "brightness(0) invert(1)";
+    }
+  });
 }
 
-function redrawAllArrows(){
-  drawStepArrows("pipelineWrap", "pipelineArrows", ".stepcard");
-  drawStepArrows("flowWrap", "flowArrows", ".stepcard");
+/* ===================== 1. Pipeline ===================== */
+const PIPE = {
+  W: 1300, H: 810,
+  frames: [{ x: 8, y: 108, w: 186, h: 350, label: "Source files" }],
+  nodes: [
+    { id:"s1", x:20, y:150, w:160, h:58, c:"yellow", title:"Scanned PDFs", size:17 },
+    { id:"s2", x:20, y:228, w:160, h:58, c:"yellow", title:"Digital PDFs", size:17 },
+    { id:"s3", x:20, y:306, w:160, h:58, c:"yellow", title:"Excel / CSV", size:17 },
+    { id:"s4", x:20, y:384, w:160, h:58, c:"yellow", title:"Maps & images", size:17 },
+
+    { id:"ing", x:280, y:230, w:170, h:110, c:"blue", title:"Ingestion", sub:"fingerprint + metadata", icon:"upload" },
+    { id:"ocr", x:550, y:230, w:180, h:110, c:"blue", title:"OCR & Layout", sub:"deskew, text, regions", icon:"scan" },
+    { id:"nlp", x:830, y:110, w:170, h:90, c:"teal", title:"NLP Extraction", sub:"entities, metrics, units", icon:"brain" },
+    { id:"tbl", x:830, y:370, w:170, h:90, c:"teal", title:"Table Mapping", sub:"rows, columns, cells", icon:"table" },
+    { id:"topic", x:1100, y:20, w:180, h:80, c:"violet", title:"Word Cloud", sub:"topics & trends", icon:"tag" },
+    { id:"val", x:1100, y:230, w:180, h:110, c:"orange", title:"Validation", sub:"units, totals, variance", icon:"calculator" },
+
+    { id:"chk", x:1100, y:495, w:180, h:100, c:"red", title:"Conflict &\nAnomaly Check", size:17, icon:"warning" },
+    { id:"store", t:"db", x:830, y:470, w:170, h:150, c:"green", title:"Fact Store", sub:"value + page + cell", icon:"database" },
+    { id:"qa", x:550, y:495, w:180, h:100, c:"blue", title:"Grounded Q&A", sub:"answers with citations", icon:"magnifying-glass" },
+    { id:"rep", x:280, y:495, w:170, h:100, c:"blue", title:"Report Builder", sub:"gazette format", icon:"article" },
+    { id:"out", x:20, y:495, w:160, h:100, c:"green", title:"Briefing Note", sub:"PDF / DOCX", icon:"export" },
+
+    { id:"rev", x:1100, y:700, w:180, h:90, c:"red", title:"Human Review", sub:"officer certifies", icon:"seal-check" },
+    { id:"off", t:"circle", cx:640, cy:735, r:52, c:"blue", title:"Officer", size:18 },
+
+    { id:"n1", t:"note", c:"pink", x:250, y:680, w:230, h:90, title:"Every number links\nback to its exact\npage and cell" },
+    { id:"n2", t:"note", c:"yellow", x:530, y:60, w:230, h:92, title:"No model guesses\nthe maths —\nformulas only" }
+  ],
+  edges: [
+    { a:"s1", as:"r", b:"ing", bs:"l", mx:232 },
+    { a:"s2", as:"r", b:"ing", bs:"l", mx:232 },
+    { a:"s3", as:"r", b:"ing", bs:"l", mx:232 },
+    { a:"s4", as:"r", b:"ing", bs:"l", mx:232 },
+    { a:"ing", as:"r", b:"ocr", bs:"l", label:"pages" },
+    { a:"ocr", as:"r", b:"nlp", bs:"l", label:"text", lp:[780, 205] },
+    { a:"ocr", as:"r", b:"tbl", bs:"l", label:"tables", lp:[780, 365] },
+    { a:"nlp", as:"t", b:"topic", bs:"l", label:"key phrases" },
+    { a:"nlp", as:"r", b:"val", bs:"l", bo:-22, label:"facts", lp:[1050, 210] },
+    { a:"tbl", as:"r", b:"val", bs:"l", bo:22, label:"cells", lp:[1050, 360] },
+    { a:"val", as:"b", b:"chk", bs:"t", label:"checked facts" },
+    { a:"chk", as:"l", b:"store", bs:"r", label:"trusted" },
+    { a:"chk", as:"b", b:"rev", bs:"t", dash:true, col:"#e03131", label:"mismatch!" },
+    { a:"rev", as:"l", b:"store", bs:"b", label:"certified value" },
+    { a:"store", as:"l", b:"qa", bs:"r", label:"evidence" },
+    { a:"qa", as:"l", b:"rep", bs:"r", label:"answer" },
+    { a:"rep", as:"l", b:"out", bs:"r", label:"export" },
+    { a:"off", as:"t", b:"qa", bs:"b", label:"asks" }
+  ]
+};
+
+/* ===================== 2. Architecture ===================== */
+const ARCH = {
+  W: 1300, H: 760,
+  frames: [
+    { x: 190, y: 26, w: 880, h: 710, label: "Government network boundary — CMPDI intranet or NIC MeghRaj", color:"#2f9e44" },
+    { x: 668, y: 62, w: 214, h: 610, label: "Services", color:"#868e96" }
+  ],
+  nodes: [
+    { id:"off", t:"circle", cx:90, cy:380, r:62, c:"blue", title:"Officer", sub:"Ministry / CMPDI" },
+    { id:"portal", x:230, y:330, w:170, h:100, c:"blue", title:"Officer Portal", sub:"English + हिन्दी", icon:"monitor" },
+    { id:"gw", x:455, y:330, w:170, h:100, c:"gray", title:"API Gateway", sub:"login + roles", icon:"plugs-connected" },
+
+    { id:"s1", x:690, y:100, w:170, h:80, c:"teal", title:"Doc Processing", sub:"OCR + NLP", size:17, icon:"scan" },
+    { id:"s2", x:690, y:210, w:170, h:80, c:"orange", title:"Validation", sub:"exact maths", size:17, icon:"calculator" },
+    { id:"s3", x:690, y:320, w:170, h:80, c:"teal", title:"Q&A Engine", sub:"cited answers", size:17, icon:"magnifying-glass" },
+    { id:"s4", x:690, y:430, w:170, h:80, c:"violet", title:"Topic Engine", sub:"word cloud", size:17, icon:"tag" },
+    { id:"s5", x:690, y:540, w:170, h:80, c:"red", title:"Conflict Check", sub:"never averages", size:17, icon:"warning" },
+
+    { id:"d1", t:"db", x:915, y:80, w:130, h:120, c:"green", title:"Documents", size:17 },
+    { id:"d2", t:"db", x:915, y:230, w:130, h:120, c:"green", title:"Fact Store", size:17 },
+    { id:"d3", t:"db", x:915, y:380, w:130, h:120, c:"green", title:"Evidence\nIndex", size:17 },
+    { id:"d4", t:"db", x:915, y:530, w:130, h:120, c:"yellow", title:"Audit\nLedger", size:17 },
+
+    { id:"ext", t:"cloud", x:1100, y:300, w:190, h:150, c:"gray", title:"Outside AI\nAPIs", size:16, x_mark:true }
+  ],
+  edges: [
+    { a:"off", as:"r", b:"portal", bs:"l", label:"asks", both:true },
+    { a:"portal", as:"r", b:"gw", bs:"l", label:"REST" },
+    { a:"gw", as:"r", b:"s1", bs:"l", mx:655 },
+    { a:"gw", as:"r", b:"s2", bs:"l", mx:655 },
+    { a:"gw", as:"r", b:"s3", bs:"l", mx:655 },
+    { a:"gw", as:"r", b:"s4", bs:"l", mx:655 },
+    { a:"gw", as:"r", b:"s5", bs:"l", mx:655 },
+    { a:"s1", as:"r", b:"d1", bs:"l", ao:0, bo:0 },
+    { a:"s2", as:"r", b:"d2", bs:"l" },
+    { a:"s3", as:"r", b:"d3", bs:"l" },
+    { a:"s4", as:"r", b:"d1", bs:"b", via:[[895,470],[895,215],[980,215]] },
+    { a:"s5", as:"r", b:"d4", bs:"l" },
+    { a:"gw", as:"b", b:"d4", bs:"b", via:[[540,700],[980,700]], label:"every action logged" },
+    { a:"d3", as:"r", b:"ext", bs:"l", dash:true, col:"#e03131", label:"never called", lp:[1195, 480] }
+  ]
+};
+
+/* ===================== 3. Lifecycle ===================== */
+const LIFE = {
+  W: 1350, H: 340,
+  nodes: [
+    { id:"off", t:"circle", cx:70, cy:140, r:55, c:"blue", title:"Officer" },
+    { id:"portal", x:215, y:95, w:150, h:90, c:"blue", title:"Portal", icon:"monitor" },
+    { id:"qa", x:455, y:95, w:150, h:90, c:"teal", title:"Q&A Engine", size:18, icon:"magnifying-glass" },
+    { id:"store", t:"db", x:695, y:75, w:150, h:130, c:"green", title:"Fact Store", size:18 },
+    { id:"chk", x:935, y:95, w:150, h:90, c:"red", title:"Conflict\nCheck", size:18, icon:"warning" },
+    { id:"out", x:1175, y:95, w:160, h:90, c:"green", title:"Signed\nBriefing Note", size:17, icon:"seal-check" },
+    { id:"rev", x:935, y:245, w:150, h:75, c:"red", title:"Officer Review", size:17 }
+  ],
+  edges: [
+    { a:"off", as:"r", b:"portal", bs:"l", label:"asks", num:"1", lp:[170,112] },
+    { a:"portal", as:"r", b:"qa", bs:"l", label:"query", num:"2", lp:[410,112] },
+    { a:"qa", as:"r", b:"store", bs:"l", label:"facts", num:"3", lp:[650,112] },
+    { a:"store", as:"r", b:"chk", bs:"l", label:"check", num:"4", lp:[890,112] },
+    { a:"chk", as:"r", b:"out", bs:"l", label:"sign", num:"5", lp:[1130,112] },
+    { a:"chk", as:"b", b:"rev", bs:"t", dash:true, col:"#e03131", label:"conflict", lp:[1045,215] },
+    { a:"rev", as:"r", b:"out", bs:"b", label:"certified" }
+  ]
+};
+
+function renderAll(){
+  render("pipe", PIPE);
+  render("arch", ARCH);
+  render("life", LIFE);
 }
 
-window.addEventListener("load", () => setTimeout(redrawAllArrows, 60));
-let resizeT;
-window.addEventListener("resize", () => { clearTimeout(resizeT); resizeT = setTimeout(redrawAllArrows, 120); });
+const virgil = new FontFace("Virgil", "url(https://cdn.jsdelivr.net/npm/@excalidraw/excalidraw@0.17.6/dist/excalidraw-assets/Virgil.woff2)");
+virgil.load().then(f => { document.fonts.add(f); renderAll(); }).catch(renderAll);
+
+/* ===================== Light scroll reveal (only if GSAP loads) ===================== */
+if (window.gsap && window.ScrollTrigger) {
+  gsap.registerPlugin(ScrollTrigger);
+  document.documentElement.classList.add("js-ready");
+  gsap.set(".reveal", { opacity: 0, y: 14 });
+  ScrollTrigger.batch(".reveal", {
+    start: "top 90%", once: true,
+    onEnter: b => gsap.to(b, { opacity: 1, y: 0, duration: .5, ease: "power2.out", stagger: 0.05 })
+  });
+  ScrollTrigger.create({
+    trigger: "#secRing", start: "top 85%", once: true,
+    onEnter: () => {
+      gsap.to("#ringFg", { strokeDashoffset: 0, duration: 1.3, ease: "power2.out" });
+      const c = { v: 0 };
+      gsap.to(c, { v: 8, duration: 1.3, ease: "power2.out", onUpdate: () => document.getElementById("ringNum").textContent = Math.round(c.v) + "/8" });
+    }
+  });
+}
 </script>
 </body>
 </html>
