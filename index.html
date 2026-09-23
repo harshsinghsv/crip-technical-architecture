@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CRIP — Technical Architecture | PS 26023</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink-900:#0b1220; --ink-800:#151f30; --ink-700:#26334a; --ink-600:#3c4a63;
+    --ink-500:#5b6b85; --ink-400:#8794a8; --ink-300:#c1c9d6; --ink-200:#e1e6ee;
+    --ink-100:#f0f3f8; --ink-50:#f8fafc; --white:#fff;
+    --accent:#2b3ff0; --accent-soft:#eef0fe;
+    --teal:#0d9488; --teal-soft:#ecfdf9;
+    --amber:#b45309; --amber-soft:#fffbeb;
+    --rose:#be123c; --rose-soft:#fff1f3;
+    --emerald:#047857; --emerald-soft:#ecfdf5;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+    --mono:'JetBrains Mono','SF Mono',Consolas,monospace;
+    --shadow-card: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.12);
+    --maxw:1280px;
+  }
+  *,*::before,*::after{ box-sizing:border-box; }
+  body{ margin:0; background:var(--white); color:var(--ink-800); font-family:var(--sans); font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased; }
+  img{ display:block; }
+  .wrap{ max-width:var(--maxw); margin:0 auto; padding:0 40px; }
+  section{ padding:72px 0; }
+  h2{ margin:0 0 8px; font-weight:800; letter-spacing:-0.02em; color:var(--ink-900); font-size:27px; }
+  .cap{ margin:0 0 36px; font-size:13.5px; color:var(--ink-400); }
+  .icon{ width:22px; height:22px; flex-shrink:0; }
+
+  header.top{ border-bottom:1px solid var(--ink-200); }
+  .top-inner{ display:flex; align-items:center; justify-content:space-between; height:68px; }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand .mark{ width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg,var(--accent),#5b3ff0); display:flex; align-items:center; justify-content:center; }
+  .brand .mark img{ width:18px; height:18px; filter:invert(1) brightness(2); }
+  .brand b{ font-size:14.5px; color:var(--ink-900); }
+  .brand small{ display:block; font-size:10.5px; color:var(--ink-400); font-weight:600; letter-spacing:.03em; }
+  .top-tag{ font-size:11.5px; font-weight:700; color:var(--ink-500); padding:7px 13px; border:1px solid var(--ink-200); border-radius:100px; }
+
+  .panel{ background:var(--white); border:1px solid var(--ink-200); border-radius:22px; box-shadow:var(--shadow-card); }
+  .band{ background:var(--ink-50); border-top:1px solid var(--ink-200); border-bottom:1px solid var(--ink-200); }
+
+  /* ---------- reveal (scroll fade-in, nothing else) ---------- */
+  .reveal{ opacity:0; transform:translateY(14px); }
+
+  /* ---------- layered architecture ---------- */
+  .layer{ position:relative; padding:26px 0; }
+  .layer:not(:last-child)::after{ content:""; position:absolute; left:50%; bottom:-2px; transform:translateX(-50%); width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-top:9px solid var(--ink-300); }
+  .layer:not(:last-child){ border-bottom:1px dashed var(--ink-200); margin-bottom:20px; }
+  .layer-label{ display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .layer-tag{ font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; padding:5px 10px; border-radius:6px; color:#fff; }
+  .layer-title{ font-size:13.5px; font-weight:700; color:var(--ink-700); }
+  .layer-desc{ font-size:12.5px; color:var(--ink-400); margin-left:auto; }
+
+  /* ---------- shared step-card grid (used by architecture nodes, pipeline stages, request lifecycle) ---------- */
+  .step-wrap{ position:relative; }
+  .step-arrows{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0; overflow:visible; }
+  .step-grid{ position:relative; z-index:1; display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  .step-grid + .step-grid{ margin-top:26px; }
+
+  /* Snake (boustrophedon) flow: even rows inside a sequential pipeline/flow
+     run right-to-left visually so the row-wrap connector is a short local
+     drop, not a long diagonal sweeping across the whole row. */
+  #pipelineWrap .step-grid:nth-of-type(even),
+  #flowWrap .step-grid:nth-of-type(even){ direction: rtl; }
+  #pipelineWrap .step-grid:nth-of-type(even) .stepcard,
+  #flowWrap .step-grid:nth-of-type(even) .stepcard{ direction: ltr; }
+
+  .stepcard{ position:relative; background:var(--white); border:1px solid var(--ink-200); border-radius:16px; padding:20px 20px 16px; min-height:150px; display:flex; flex-direction:column; }
+  .stepcard .num{ position:absolute; top:-11px; left:16px; width:23px; height:23px; border-radius:50%; background:var(--ink-900); color:#fff; font-size:10.5px; font-weight:800; display:flex; align-items:center; justify-content:center; font-family:var(--mono); }
+  .stepcard .ic-wrap{ width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; flex-shrink:0; }
+  .stepcard .ic-wrap img{ width:21px; height:21px; }
+  .stepcard b.t{ font-size:13.5px; font-weight:700; color:var(--ink-900); margin:0 0 5px; line-height:1.3; display:block; }
+  .stepcard p{ font-size:11.5px; color:var(--ink-500); line-height:1.5; margin:0; }
+  .stepcard .tech-tag{ font-size:9.5px; font-family:var(--mono); color:var(--ink-400); background:var(--ink-50); padding:3px 8px; border-radius:6px; display:inline-block; margin-top:10px; align-self:flex-start; }
+
+  /* architecture node: same box metrics as stepcard, row icon+text content */
+  .node{ position:relative; background:var(--white); border:1px solid var(--ink-200); border-radius:16px; padding:20px; min-height:150px; display:flex; gap:14px; align-items:center; }
+  .node .ic-wrap{ width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .node .ic-wrap img{ width:21px; height:21px; }
+  .node b{ display:block; font-size:13.5px; font-weight:700; color:var(--ink-900); line-height:1.3; }
+  .node p{ margin:5px 0 0; font-size:11.5px; color:var(--ink-500); line-height:1.5; }
+  .t-blue .layer-tag{ background:var(--accent); } .t-blue .ic-wrap{ background:var(--accent-soft); }
+  .t-teal .layer-tag{ background:var(--teal); } .t-teal .ic-wrap{ background:var(--teal-soft); }
+  .t-amber .layer-tag{ background:var(--amber); } .t-amber .ic-wrap{ background:var(--amber-soft); }
+  .t-rose .layer-tag{ background:var(--rose); } .t-rose .ic-wrap{ background:var(--rose-soft); }
+
+  /* ---------- stack ---------- */
+  .stack-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  .stack-card{ background:var(--white); border:1px solid var(--ink-200); border-radius:16px; padding:24px; text-align:center; }
+  .stack-card .logo{ width:40px; height:40px; margin:0 auto 12px; }
+  .stack-card b{ display:block; font-size:13.5px; color:var(--ink-900); }
+  .stack-card span{ font-size:11px; color:var(--ink-400); }
+
+  /* ---------- security ---------- */
+  .sec-wrap{ display:grid; grid-template-columns:240px 1fr; gap:48px; align-items:center; }
+  .sec-ring{ position:relative; width:220px; height:220px; margin:0 auto; }
+  .sec-ring svg{ width:100%; height:100%; transform:rotate(-90deg); }
+  .ring-bg{ fill:none; stroke:var(--ink-100); stroke-width:12; }
+  .ring-fg{ fill:none; stroke:var(--emerald); stroke-width:12; stroke-linecap:round; stroke-dasharray:566; stroke-dashoffset:566; }
+  .ring-label{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .ring-label b{ font-size:38px; font-weight:800; color:var(--ink-900); letter-spacing:-0.02em; }
+  .ring-label span{ font-size:11px; color:var(--ink-400); text-align:center; margin-top:4px; line-height:1.4; }
+  .sec-list{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .sec-row{ display:flex; gap:14px; align-items:flex-start; padding:16px 18px; border:1px solid var(--ink-200); border-radius:14px; }
+  .sec-row .ic-wrap{ width:38px; height:38px; border-radius:10px; background:var(--emerald-soft); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .sec-row .ic-wrap img{ width:20px; height:20px; }
+  .sec-row b{ display:block; font-size:13px; color:var(--ink-900); }
+  .sec-row p{ margin:3px 0 0; font-size:11.5px; color:var(--ink-500); line-height:1.5; }
+
+  /* ---------- deployment ---------- */
+  .deploy{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  .deploy-box{ border-radius:18px; padding:26px; }
+  .deploy-box.on{ background:var(--ink-900); }
+  .deploy-box.off{ background:var(--ink-50); border:1.5px dashed var(--ink-300); }
+  .dep-title{ display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .deploy-box.on .dep-title b{ color:#fff; font-size:14px; }
+  .deploy-box.off .dep-title b{ color:var(--ink-900); font-size:14px; }
+  .dep-row{ display:flex; align-items:center; gap:10px; padding:10px 0; font-size:12.5px; }
+  .deploy-box.on .dep-row{ color:#c1c9d6; border-bottom:1px solid #26334a; }
+  .deploy-box.off .dep-row{ color:var(--ink-500); border-bottom:1px solid var(--ink-200); }
+  .dep-row:last-child{ border-bottom:none; }
+  .dep-row img{ width:16px; height:16px; flex-shrink:0; }
+
+  footer{ padding:36px 0; border-top:1px solid var(--ink-200); text-align:center; font-size:11.5px; color:var(--ink-400); }
+
+  @media (max-width:1080px){
+    .wrap{ padding:0 24px; }
+    .step-grid{ grid-template-columns:repeat(2,1fr); }
+    .stack-grid{ grid-template-columns:repeat(2,1fr); }
+    .sec-wrap{ grid-template-columns:1fr; }
+    .sec-list{ grid-template-columns:1fr; }
+    .deploy{ grid-template-columns:1fr; }
+  }
+  @media (max-width:640px){
+    .step-grid{ grid-template-columns:1fr; }
+    .stack-grid{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-inner">
+    <div class="brand">
+      <span class="mark"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/stack-bold.svg" alt=""></span>
+      <span><b>CRIP</b><small>Technical Architecture</small></span>
+    </div>
+    <span class="top-tag">SIH 2026 · Problem Statement 26023 · Ministry of Coal</span>
+  </div>
+</header>
+
+<!-- ============ DOCUMENT INTELLIGENCE PIPELINE ============ -->
+<section id="pipeline" class="band">
+  <div class="wrap">
+    <h2>Document Intelligence Pipeline</h2>
+    <p class="cap">Twelve deterministic stages — a scanned page to a certified, cited figure. Arrows trace the exact order data moves through.</p>
+
+    <div class="step-wrap" id="pipelineWrap">
+      <svg class="step-arrows" id="pipelineArrows"></svg>
+
+      <div class="step-grid">
+        <div class="stepcard reveal"><span class="num">01</span><span class="ic-wrap" style="background:var(--accent-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/upload-bold.svg" style="filter:invert(19%) sepia(84%) saturate(3900%) hue-rotate(232deg);"></span><b class="t">Ingestion</b><p>PDF, XLSX, CSV, scanned images — SHA-256 checksum on upload.</p><span class="tech-tag">multipart/form-data</span></div>
+        <div class="stepcard reveal"><span class="num">02</span><span class="ic-wrap" style="background:var(--accent-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/scan-bold.svg" style="filter:invert(19%) sepia(84%) saturate(3900%) hue-rotate(232deg);"></span><b class="t">OCR &amp; Layout Analysis</b><p>Native text extraction, deskew, table boundary detection.</p><span class="tech-tag">PyMuPDF</span></div>
+        <div class="stepcard reveal"><span class="num">03</span><span class="ic-wrap" style="background:var(--teal-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/table-bold.svg" style="filter:invert(37%) sepia(97%) saturate(432%) hue-rotate(131deg);"></span><b class="t">Table &amp; Cell Mapping</b><p>Spreadsheet grids parsed to sheet!cell references.</p><span class="tech-tag">openpyxl</span></div>
+      </div>
+
+      <div class="step-grid">
+        <div class="stepcard reveal"><span class="num">04</span><span class="ic-wrap" style="background:var(--teal-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/brain-bold.svg" style="filter:invert(37%) sepia(97%) saturate(432%) hue-rotate(131deg);"></span><b class="t">NLP Extraction</b><p>Entity &amp; metric ID, header association, unit normalization.</p><span class="tech-tag">rule-based NER</span></div>
+        <div class="stepcard reveal"><span class="num">05</span><span class="ic-wrap" style="background:var(--amber-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/calculator-bold.svg" style="filter:invert(29%) sepia(54%) saturate(1731%) hue-rotate(2deg);"></span><b class="t">Deterministic Validation</b><p>Variance &amp; totals — unit-tested, never predicted.</p><span class="tech-tag">calculation_engine.py</span></div>
+        <div class="stepcard reveal"><span class="num">06</span><span class="ic-wrap" style="background:var(--amber-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/warning-bold.svg" style="filter:invert(29%) sepia(54%) saturate(1731%) hue-rotate(2deg);"></span><b class="t">Plausibility &amp; Anomaly Scan</b><p>Flags figures unprompted — zero target vs. non-zero actual.</p><span class="tech-tag">RULE-ANOM-0x</span></div>
+      </div>
+
+      <div class="step-grid">
+        <div class="stepcard reveal"><span class="num">07</span><span class="ic-wrap" style="background:var(--accent-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/database-bold.svg" style="filter:invert(19%) sepia(84%) saturate(3900%) hue-rotate(232deg);"></span><b class="t">Canonical Fact Store</b><p>Sealed facts with document, page, bbox, content hash.</p><span class="tech-tag">fact_store.py</span></div>
+        <div class="stepcard reveal"><span class="num">08</span><span class="ic-wrap" style="background:var(--teal-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/magnifying-glass-bold.svg" style="filter:invert(37%) sepia(97%) saturate(432%) hue-rotate(131deg);"></span><b class="t">Retrieval &amp; Grounded QA</b><p>Query-matched retrieval, citation-backed answers.</p><span class="tech-tag">qa_engine.py</span></div>
+        <div class="stepcard reveal"><span class="num">09</span><span class="ic-wrap" style="background:var(--rose-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/git-merge-bold.svg" style="filter:invert(15%) sepia(80%) saturate(3900%) hue-rotate(324deg);"></span><b class="t">Conflict Reconciliation</b><p>Provisional vs. audited surfaced for certification.</p><span class="tech-tag">RULE-CON-04</span></div>
+      </div>
+
+      <div class="step-grid">
+        <div class="stepcard reveal"><span class="num">10</span><span class="ic-wrap" style="background:var(--accent-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/tag-bold.svg" style="filter:invert(19%) sepia(84%) saturate(3900%) hue-rotate(232deg);"></span><b class="t">Topic &amp; Word Cloud</b><p>Phrase clustering, trend + drill-down to passages.</p><span class="tech-tag">topic_service.py</span></div>
+        <div class="stepcard reveal"><span class="num">11</span><span class="ic-wrap" style="background:var(--emerald-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/user-check-bold.svg" style="filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);"></span><b class="t">Human Sign-Off</b><p>Named officer certifies; decision sealed to ledger.</p><span class="tech-tag">review_workbench</span></div>
+        <div class="stepcard reveal"><span class="num">12</span><span class="ic-wrap" style="background:var(--emerald-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/export-bold.svg" style="filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);"></span><b class="t">Export &amp; Distribution</b><p>Gazette-formatted briefing note — print, DOCX, PDF.</p><span class="tech-tag">report_service.py</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SYSTEM ARCHITECTURE ============ -->
+<section id="architecture">
+  <div class="wrap">
+    <h2>System Architecture</h2>
+    <p class="cap">Five layers, deployment boundary to browser — no layer calls outside the network perimeter.</p>
+
+    <div class="panel" style="padding:34px 34px 26px;">
+
+      <div class="layer t-blue">
+        <div class="layer-label">
+          <span class="layer-tag">01 · Experience</span>
+          <span class="layer-title">Presentation Layer</span>
+          <span class="layer-desc">React · Vite · Tailwind</span>
+        </div>
+        <div class="step-grid">
+          <div class="node reveal"><span class="ic-wrap" style="color:var(--accent);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/monitor-bold.svg"></span><div><b>Officer Portal</b><p>Demo journey, evidence library, review queue</p></div></div>
+          <div class="node reveal"><span class="ic-wrap" style="color:var(--accent);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/file-text-bold.svg"></span><div><b>Coordinate Document Viewer</b><p>PDF + XLSX render with bbox overlay</p></div></div>
+          <div class="node reveal"><span class="ic-wrap" style="color:var(--accent);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/chats-bold.svg"></span><div><b>AI Query Console</b><p>Full-text + metadata search</p></div></div>
+        </div>
+        <div class="step-grid">
+          <div class="node reveal"><span class="ic-wrap" style="color:var(--accent);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/tag-bold.svg"></span><div><b>Word Cloud &amp; Topics</b><p>Trend-weighted phrase explorer</p></div></div>
+        </div>
+      </div>
+
+      <div class="layer">
+        <div class="layer-label">
+          <span class="layer-tag" style="background:var(--ink-700);">02 · Access</span>
+          <span class="layer-title">API Gateway</span>
+          <span class="layer-desc">FastAPI · REST · role-scoped</span>
+        </div>
+        <div class="step-grid">
+          <div class="node reveal"><span class="ic-wrap" style="background:var(--ink-100);color:var(--ink-700);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/path-bold.svg"></span><div><b>REST Gateway</b><p>Typed request/response contracts</p></div></div>
+          <div class="node reveal"><span class="ic-wrap" style="background:var(--ink-100);color:var(--ink-700);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/users-bold.svg"></span><div><b>Role-Based Access</b><p>5 officer personas, scoped permissions</p></div></div>
+          <div class="node reveal"><span class="ic-wrap" style="background:var(--ink-100);color:var(--ink-700);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/clock-counter-clockwise-bold.svg"></span><div><b>Audit Middleware</b><p>Every call logged to the SHA-256 chain</p></div></div>
+        </div>
+      </div>
+
+      <div class="layer t-teal">
+        <div class="layer-label">
+          <span class="layer-tag">03 · Intelligence</span>
+          <span class="layer-title">Document &amp; Reasoning Services</span>
+          <span class="layer-desc">deterministic — zero external model calls</span>
+        </div>
+        <div class="step-grid">
+          <div class="node reveal"><span class="ic-wrap" style="color:var(--teal);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/scan-bold.svg"></span><div><b>OCR &amp; Layout Engine</b><p>Native text + scanned-page OCR fallback</p></div></div>
+          <div class="node reveal"><span class="ic-wrap" style="color:var(--teal);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/brain-bold.svg"></span><div><b>NLP Extraction</b><p>Entity &amp; metric / table-cell association</p></div></div>
+          <div class="node reveal"><span class="ic-wrap" style="color:var(--teal);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/calculator-bold.svg"></span><div><b>Calculation Engine</b><p>Variance, totals, plausibility — unit-tested</p></div></div>
+        </div>
+        <div class="step-grid">
+          <div class="node reveal"><span class="ic-wrap" style="color:var(--teal);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/magnifying-glass-bold.svg"></span><div><b>Retrieval &amp; QA Engine</b><p>Hybrid retrieval, template grounding</p></div></div>
+          <div class="node reveal"><span class="ic-wrap" style="color:var(--teal);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/git-merge-bold.svg"></span><div><b>Conflict Detection</b><p>Surfaces disagreement, never averages</p></div></div>
+          <div class="node reveal"><span class="ic-wrap" style="color:var(--teal);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/warning-bold.svg"></span><div><b>Anomaly Scanner</b><p>Physical-plausibility checks, unprompted</p></div></div>
+        </div>
+      </div>
+
+      <div class="layer t-amber">
+        <div class="layer-label">
+          <span class="layer-tag">04 · State</span>
+          <span class="layer-title">Governed Data Layer</span>
+          <span class="layer-desc">every fact traceable to page · cell · hash</span>
+        </div>
+        <div class="step-grid">
+          <div class="node reveal"><span class="ic-wrap" style="color:var(--amber);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/database-bold.svg"></span><div><b>Canonical Fact Store</b><p>Normalized metrics, approval lifecycle</p></div></div>
+          <div class="node reveal"><span class="ic-wrap" style="color:var(--amber);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/file-text-bold.svg"></span><div><b>Evidence Index</b><p>Page, bbox, sheet!cell provenance</p></div></div>
+          <div class="node reveal"><span class="ic-wrap" style="color:var(--amber);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/clipboard-text-bold.svg"></span><div><b>Review Task Queue</b><p>Conflicts, anomalies, verifications</p></div></div>
+        </div>
+        <div class="step-grid">
+          <div class="node reveal"><span class="ic-wrap" style="color:var(--amber);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/key-bold.svg"></span><div><b>Audit Ledger</b><p>SHA-256 chained event log</p></div></div>
+        </div>
+      </div>
+
+      <div class="layer t-rose" style="border-bottom:none; margin-bottom:0;">
+        <div class="layer-label">
+          <span class="layer-tag">05 · Infra</span>
+          <span class="layer-title">Deployment Boundary</span>
+          <span class="layer-desc">intranet / NIC MeghRaj — no internet egress</span>
+        </div>
+        <div class="step-grid">
+          <div class="node reveal"><span class="ic-wrap" style="color:var(--rose);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/hard-drives-bold.svg"></span><div><b>On-Premise / Air-Gapped</b><p>CMPDI Regional Institute intranet</p></div></div>
+          <div class="node reveal"><span class="ic-wrap" style="color:var(--rose);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/cloud-bold.svg"></span><div><b>NIC MeghRaj (optional)</b><p>Empanelled cloud, no public egress</p></div></div>
+          <div class="node reveal"><span class="ic-wrap" style="color:var(--rose);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/lock-bold.svg"></span><div><b>Network Isolation</b><p>Zero outbound calls in request path</p></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ REQUEST FLOW ============ -->
+<section id="flow-section" class="band">
+  <div class="wrap">
+    <h2>Request Lifecycle</h2>
+    <p class="cap">One inquiry, start to finish — same card size as the pipeline above, same arrow logic.</p>
+
+    <div class="step-wrap" id="flowWrap">
+      <svg class="step-arrows" id="flowArrows"></svg>
+
+      <div class="step-grid">
+        <div class="stepcard reveal"><span class="num">01</span><span class="ic-wrap" style="background:var(--accent-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/users-bold.svg" style="filter:invert(19%) sepia(84%) saturate(3900%) hue-rotate(232deg);"></span><b class="t">Officer Submits Inquiry</b><p>Ministry request entered via portal or AI Query console.</p><span class="tech-tag">Portal / AI Query</span></div>
+        <div class="stepcard reveal"><span class="num">02</span><span class="ic-wrap" style="background:var(--teal-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/magnifying-glass-bold.svg" style="filter:invert(37%) sepia(97%) saturate(432%) hue-rotate(131deg);"></span><b class="t">Retrieval &amp; Grounding</b><p>Query matched against the governed fact store.</p><span class="tech-tag">qa_engine.py</span></div>
+        <div class="stepcard reveal"><span class="num">03</span><span class="ic-wrap" style="background:var(--amber-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/calculator-bold.svg" style="filter:invert(29%) sepia(54%) saturate(1731%) hue-rotate(2deg);"></span><b class="t">Deterministic Calculation</b><p>Variance and totals computed, never predicted.</p><span class="tech-tag">variance · totals</span></div>
+      </div>
+
+      <div class="step-grid">
+        <div class="stepcard reveal"><span class="num">04</span><span class="ic-wrap" style="background:var(--rose-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/git-merge-bold.svg" style="filter:invert(15%) sepia(80%) saturate(3900%) hue-rotate(324deg);"></span><b class="t">Conflict Check</b><p>Disagreeing sources surfaced, never averaged.</p><span class="tech-tag">RULE-CON-04</span></div>
+        <div class="stepcard reveal"><span class="num">05</span><span class="ic-wrap" style="background:var(--emerald-soft);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/user-check-bold.svg" style="filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);"></span><b class="t">Officer Certifies</b><p>Named domain officer signs off on the figure.</p><span class="tech-tag">named, logged</span></div>
+        <div class="stepcard reveal"><span class="num">06</span><span class="ic-wrap" style="background:var(--ink-100);"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/export-bold.svg" style="filter:invert(15%) sepia(8%) saturate(700%) hue-rotate(180deg);"></span><b class="t">Report Frozen &amp; Exported</b><p>Immutable snapshot generated for distribution.</p><span class="tech-tag">SHA-256 snapshot</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TECH STACK ============ -->
+<section id="stack">
+  <div class="wrap">
+    <h2>Technology Stack</h2>
+    <p class="cap">Verifiable, offline-capable technology — nothing here needs a paid API key.</p>
+    <div class="stack-grid">
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/react/58C4DC" alt="React"><b>React 18</b><span>Frontend UI</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/typescript/3178C6" alt="TypeScript"><b>TypeScript</b><span>Type-safe app code</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/vite/B989FF" alt="Vite"><b>Vite</b><span>Build tooling</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/tailwindcss/38BDF8" alt="Tailwind CSS"><b>Tailwind CSS</b><span>Design system</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/fastapi/019486" alt="FastAPI"><b>FastAPI</b><span>Backend REST API</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/python/4B8BBE" alt="Python"><b>Python 3.12</b><span>Service layer</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/pydantic/E92063" alt="Pydantic"><b>Pydantic</b><span>Typed contracts</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/database-bold.svg" alt="Fact Store" style="filter:invert(29%) sepia(54%) saturate(1731%) hue-rotate(2deg);"><b>Fact Store</b><span>Governed data layer</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECURITY ============ -->
+<section id="security" class="band">
+  <div class="wrap">
+    <h2>Security &amp; Compliance</h2>
+    <p class="cap">Properties of the architecture, not bolt-on policy.</p>
+
+    <div class="sec-wrap">
+      <div class="sec-ring" id="secRing">
+        <svg viewBox="0 0 200 200">
+          <circle class="ring-bg" cx="100" cy="100" r="90"/>
+          <circle class="ring-fg" id="ringFg" cx="100" cy="100" r="90"/>
+        </svg>
+        <div class="ring-label"><b id="ringNum">0/8</b><span>Hard Acceptance<br>Gates Passing</span></div>
+      </div>
+
+      <div class="sec-list">
+        <div class="sec-row reveal"><span class="ic-wrap"><img class="icon" style="width:20px;height:20px;filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/cloud-slash-bold.svg"></span><div><b>Zero external calls</b><p>No LLM or inference API in the request path.</p></div></div>
+        <div class="sec-row reveal"><span class="ic-wrap"><img class="icon" style="width:20px;height:20px;filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/users-bold.svg"></span><div><b>Role-based access</b><p>Five officer personas, each scoped.</p></div></div>
+        <div class="sec-row reveal"><span class="ic-wrap"><img class="icon" style="width:20px;height:20px;filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/clock-counter-clockwise-bold.svg"></span><div><b>Immutable audit trail</b><p>SHA-256 chained, tamper-evident.</p></div></div>
+        <div class="sec-row reveal"><span class="ic-wrap"><img class="icon" style="width:20px;height:20px;filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/shield-check-bold.svg"></span><div><b>100% provenance</b><p>Every figure traces to page + cell.</p></div></div>
+        <div class="sec-row reveal"><span class="ic-wrap"><img class="icon" style="width:20px;height:20px;filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/git-merge-bold.svg"></span><div><b>No silent averaging</b><p>Conflicts require named certification.</p></div></div>
+        <div class="sec-row reveal"><span class="ic-wrap"><img class="icon" style="width:20px;height:20px;filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/lock-bold.svg"></span><div><b>Cross-subsidiary isolation</b><p>No cross-contamination between CIL lines.</p></div></div>
+        <div class="sec-row reveal"><span class="ic-wrap"><img class="icon" style="width:20px;height:20px;filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/warning-bold.svg"></span><div><b>Safe abstention</b><p>Unanswerable queries explicitly refused.</p></div></div>
+        <div class="sec-row reveal"><span class="ic-wrap"><img class="icon" style="width:20px;height:20px;filter:invert(30%) sepia(60%) saturate(1200%) hue-rotate(115deg);" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/globe-bold.svg"></span><div><b>CERT-In aligned</b><p>Air-gapped posture, audit logging.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DEPLOYMENT ============ -->
+<section id="deployment">
+  <div class="wrap">
+    <h2>Deployment Posture</h2>
+    <p class="cap">Same platform, network on or off — the answer path never depends on internet access.</p>
+    <div class="deploy">
+      <div class="deploy-box on reveal">
+        <div class="dep-title"><img class="icon" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/hard-drives-bold.svg" style="filter:invert(66%) sepia(57%) saturate(451%) hue-rotate(101deg);"><b>What Runs</b></div>
+        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/check-bold.svg" style="filter:invert(66%) sepia(57%) saturate(451%) hue-rotate(101deg);"> FastAPI service layer (deterministic)</div>
+        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/check-bold.svg" style="filter:invert(66%) sepia(57%) saturate(451%) hue-rotate(101deg);"> Document parsing &amp; OCR engine</div>
+        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/check-bold.svg" style="filter:invert(66%) sepia(57%) saturate(451%) hue-rotate(101deg);"> Canonical fact store + evidence index</div>
+        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/check-bold.svg" style="filter:invert(66%) sepia(57%) saturate(451%) hue-rotate(101deg);"> Officer portal (static React SPA)</div>
+        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/check-bold.svg" style="filter:invert(66%) sepia(57%) saturate(451%) hue-rotate(101deg);"> SHA-256 audit ledger</div>
+      </div>
+      <div class="deploy-box off reveal">
+        <div class="dep-title"><img class="icon" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/cloud-slash-bold.svg" style="filter:invert(15%) sepia(80%) saturate(3900%) hue-rotate(324deg);"><b>Never Required</b></div>
+        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/x-bold.svg" style="filter:invert(15%) sepia(80%) saturate(3900%) hue-rotate(324deg);"> External LLM / inference API</div>
+        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/x-bold.svg" style="filter:invert(15%) sepia(80%) saturate(3900%) hue-rotate(324deg);"> Third-party cloud search service</div>
+        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/x-bold.svg" style="filter:invert(15%) sepia(80%) saturate(3900%) hue-rotate(324deg);"> Outbound internet egress in request path</div>
+        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/x-bold.svg" style="filter:invert(15%) sepia(80%) saturate(3900%) hue-rotate(324deg);"> Vendor API keys or usage billing</div>
+        <div class="dep-row"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/x-bold.svg" style="filter:invert(15%) sepia(80%) saturate(3900%) hue-rotate(324deg);"> Document content leaving the boundary</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>Coal Reporting Intelligence Platform · SIH 2026 · Problem Statement 26023 · Ministry of Coal</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+/* Scroll fade-in — the only motion on this page. */
+gsap.set(".reveal", { opacity: 0, y: 14 });
+ScrollTrigger.batch(".reveal", {
+  start: "top 88%",
+  onEnter: batch => gsap.to(batch, { opacity: 1, y: 0, duration: .55, ease: "power2.out", stagger: 0.05 }),
+  once: true
+});
+
+/* Security ring: one-time draw + count-up. */
+ScrollTrigger.create({
+  trigger: "#secRing", start: "top 80%", once: true,
+  onEnter: () => {
+    gsap.to("#ringFg", { strokeDashoffset: 0, duration: 1.4, ease: "power2.out" });
+    const counter = { v: 0 };
+    gsap.to(counter, {
+      v: 8, duration: 1.4, ease: "power2.out",
+      onUpdate: () => document.getElementById("ringNum").textContent = Math.round(counter.v) + "/8"
+    });
+  }
+});
+
+/* ---------- Static Excalidraw-style connector arrows between sequential step cards ---------- */
+function drawStepArrows(wrapId, svgId, cardSelector){
+  const wrap = document.getElementById(wrapId);
+  const svg = document.getElementById(svgId);
+  if (!wrap || !svg) return;
+  const cards = Array.from(wrap.querySelectorAll(cardSelector));
+  if (cards.length < 2) return;
+
+  const wrapRect = wrap.getBoundingClientRect();
+  svg.setAttribute("width", wrap.offsetWidth);
+  svg.setAttribute("height", wrap.offsetHeight);
+  svg.setAttribute("viewBox", `0 0 ${wrap.offsetWidth} ${wrap.offsetHeight}`);
+
+  const markerId = svgId + "-head";
+  let html = `<defs><marker id="${markerId}" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#b7c0d1"/></marker></defs>`;
+
+  for (let i = 0; i < cards.length - 1; i++) {
+    const a = cards[i].getBoundingClientRect();
+    const b = cards[i + 1].getBoundingClientRect();
+    const sameRow = Math.abs(a.top - b.top) < 4;
+    let path;
+    if (sameRow) {
+      // Direction-aware: in a snake layout, alternate rows read right-to-left,
+      // so the next card can sit to the LEFT of the previous one.
+      const aCenterX = a.left + a.width / 2, bCenterX = b.left + b.width / 2;
+      const goingRight = bCenterX >= aCenterX;
+      const x1 = (goingRight ? a.right : a.left) - wrapRect.left + (goingRight ? 2 : -2);
+      const x2 = (goingRight ? b.left : b.right) - wrapRect.left + (goingRight ? -2 : 2);
+      const y1 = a.top + a.height / 2 - wrapRect.top, y2 = b.top + b.height / 2 - wrapRect.top;
+      const mx = (x1 + x2) / 2;
+      path = `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+    } else {
+      const x1 = a.left + a.width / 2 - wrapRect.left, y1 = a.bottom - wrapRect.top + 2;
+      const x2 = b.left + b.width / 2 - wrapRect.left, y2 = b.top - wrapRect.top - 2;
+      const my = (y1 + y2) / 2;
+      path = `M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`;
+    }
+    html += `<path d="${path}" fill="none" stroke="#b7c0d1" stroke-width="2" stroke-linecap="round" marker-end="url(#${markerId})" />`;
+  }
+  svg.innerHTML = html;
+}
+
+function redrawAllArrows(){
+  drawStepArrows("pipelineWrap", "pipelineArrows", ".stepcard");
+  drawStepArrows("flowWrap", "flowArrows", ".stepcard");
+}
+
+window.addEventListener("load", () => setTimeout(redrawAllArrows, 60));
+let resizeT;
+window.addEventListener("resize", () => { clearTimeout(resizeT); resizeT = setTimeout(redrawAllArrows, 120); });
+</script>
+</body>
+</html>
