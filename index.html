@@ -43,8 +43,11 @@
   .panel{ background:var(--white); border:1px solid var(--ink-200); border-radius:22px; box-shadow:var(--shadow-card); }
   .band{ background:var(--ink-50); border-top:1px solid var(--ink-200); border-bottom:1px solid var(--ink-200); }
 
-  /* ---------- reveal (scroll fade-in, nothing else) ---------- */
-  .reveal{ opacity:0; transform:translateY(14px); }
+  /* ---------- reveal (scroll fade-in, nothing else) ----------
+     No baseline opacity:0 here on purpose: the hidden state is applied by
+     JS right before animating in. If the GSAP CDN is ever blocked or slow,
+     content simply stays visible by default instead of disappearing. */
+  .js-ready .reveal{ opacity:0; transform:translateY(14px); }
 
   /* ---------- layered architecture ---------- */
   .layer{ position:relative; padding:26px 0; }
@@ -381,7 +384,10 @@
 <script>
 gsap.registerPlugin(ScrollTrigger);
 
-/* Scroll fade-in — the only motion on this page. */
+/* Scroll fade-in — the only motion on this page. Adding this class is what
+   turns on the CSS opacity:0 baseline, so it only ever applies once GSAP
+   has actually loaded and is about to drive the reveal itself. */
+document.documentElement.classList.add("js-ready");
 gsap.set(".reveal", { opacity: 0, y: 14 });
 ScrollTrigger.batch(".reveal", {
   start: "top 88%",
