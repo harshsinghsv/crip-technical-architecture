@@ -111,7 +111,7 @@
 <section class="band">
   <div class="wrap">
     <h2>2 · System Architecture</h2>
-    <p class="cap">Everything runs inside the government network boundary. The LLM runs locally; no component calls an outside AI service.</p>
+    <p class="cap">Production deployment: every container runs under Docker Compose inside the government data centre. Qwen3 is served locally on vLLM; nothing calls an outside AI service.</p>
     <div class="canvas"><svg id="arch" role="img" aria-label="System architecture diagram"></svg></div>
   </div>
 </section>
@@ -127,20 +127,25 @@
 <section class="band">
   <div class="wrap">
     <h2>Technology Stack</h2>
-    <p class="cap">Open, offline-capable technology — nothing here needs a paid API key.</p>
+    <p class="cap">Open-source and self-hosted end to end — no paid API keys, no data leaving the network.</p>
     <div class="stack-grid">
-      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/react/58C4DC" alt="React"><b>React 18</b><span>Officer portal</span></div>
-      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/typescript/3178C6" alt="TypeScript"><b>TypeScript</b><span>Type-safe UI code</span></div>
-      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/vite/B989FF" alt="Vite"><b>Vite</b><span>Build tooling</span></div>
-      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/tailwindcss/38BDF8" alt="Tailwind CSS"><b>Tailwind CSS</b><span>Design system</span></div>
-      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/fastapi/019486" alt="FastAPI"><b>FastAPI</b><span>REST API gateway</span></div>
-      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/python/4B8BBE" alt="Python"><b>Python</b><span>Processing services</span></div>
-      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/pydantic/E92063" alt="Pydantic"><b>Pydantic</b><span>Typed data contracts</span></div>
-      <div class="stack-card reveal"><img class="logo" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/scan-bold.svg" alt="OCR" style="filter:invert(37%) sepia(97%) saturate(432%) hue-rotate(131deg);"><b>PyMuPDF + OCR</b><span>Document parsing</span></div>
-      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/postgresql/4169E1" alt="PostgreSQL"><b>PostgreSQL + pgvector</b><span>Golden Record + Vector Index</span></div>
-      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/ollama/000000" alt="Ollama"><b>Local LLM (Ollama)</b><span>Offline, open-source model</span></div>
-      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/huggingface/FFB000" alt="Hugging Face"><b>BGE-M3</b><span>Hindi + English embeddings</span></div>
-      <div class="stack-card reveal"><img class="logo" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/tag-bold.svg" alt="Topics" style="filter:invert(28%) sepia(80%) saturate(2000%) hue-rotate(250deg);"><b>KeyBERT / BERTopic</b><span>Session-wise topics</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/react/58C4DC" alt=""><b>React</b><span>Officer portal</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/fastapi/009688" alt=""><b>FastAPI</b><span>Backend API</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/celery/37814A" alt=""><b>Celery + Redis</b><span>Task queue, async pipeline, scheduling</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/postgresql/4169E1" alt=""><b>PostgreSQL</b><span>Golden Record (fact store)</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/qdrant/DC244C" alt=""><b>Qdrant</b><span>Vector database, hybrid search</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/huggingface/FFB000" alt=""><b>BGE-M3 + BGE-reranker-v2-m3</b><span>Embeddings + reranker</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/paddlepaddle/0062B0" alt=""><b>PaddleOCR</b><span>PP-OCRv4 + PP-StructureV2 · OCR, layout, tables</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/spacy/09A3D5" alt=""><b>spaCy + fine-tuned MuRIL</b><span>NLP extraction, document classification</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/tag-bold.svg" alt="" style="filter:invert(28%) sepia(80%) saturate(2000%) hue-rotate(250deg);"><b>KeyBERT + BERTopic</b><span>Topic modelling, word cloud</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/qwen/615CED" alt=""><b>Qwen3 on vLLM</b><span>Offline LLM for drafting and query routing</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/database-bold.svg" alt="" style="filter:invert(35%) sepia(60%) saturate(1500%) hue-rotate(190deg);"><b>Vanna + SQLGlot</b><span>Text-to-SQL with guardrail validation</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/file-doc-bold.svg" alt="" style="filter:invert(30%) sepia(90%) saturate(2000%) hue-rotate(205deg);"><b>docxtpl + python-docx</b><span>Bilingual report generation</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/libreoffice/18A303" alt=""><b>LibreOffice headless</b><span>DOCX → PDF conversion</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/keycloak/4D4D4D" alt=""><b>Keycloak</b><span>Authentication, RBAC</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/docker/2496ED" alt=""><b>Docker Compose</b><span>Deployment</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/nginx/009639" alt=""><b>Nginx</b><span>Reverse proxy</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/prometheus/E6522C" alt=""><b>Prometheus + Grafana</b><span>Monitoring</span></div>
     </div>
   </div>
 </section>
@@ -155,8 +160,8 @@
         <div class="ring-label"><b id="ringNum">8/8</b><span>Hard acceptance<br>gates passing</span></div>
       </div>
       <div class="sec-list">
-        <div class="sec-row reveal"><span class="ic"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/cloud-slash-bold.svg" alt=""></span><div><b>Zero external calls</b><p>No outside AI or inference service in the request path.</p></div></div>
-        <div class="sec-row reveal"><span class="ic"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/users-bold.svg" alt=""></span><div><b>Role-based access</b><p>Five officer roles, each scoped to its own work.</p></div></div>
+        <div class="sec-row reveal"><span class="ic"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/cloud-slash-bold.svg" alt=""></span><div><b>Zero external calls</b><p>Qwen3, BGE and PaddleOCR all run in-house; no outside AI service.</p></div></div>
+        <div class="sec-row reveal"><span class="ic"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/users-bold.svg" alt=""></span><div><b>Role-based access</b><p>Keycloak SSO; five officer roles, each scoped to its own work.</p></div></div>
         <div class="sec-row reveal"><span class="ic"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/clock-counter-clockwise-bold.svg" alt=""></span><div><b>Tamper-evident audit trail</b><p>Every decision is hash-chained and logged.</p></div></div>
         <div class="sec-row reveal"><span class="ic"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/shield-check-bold.svg" alt=""></span><div><b>Full provenance</b><p>Every figure traces back to a page and cell.</p></div></div>
         <div class="sec-row reveal"><span class="ic"><img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/git-merge-bold.svg" alt=""></span><div><b>No silent averaging</b><p>Conflicting figures always go to a named officer.</p></div></div>
@@ -375,40 +380,40 @@ const PIPE = {
     { id:"s4", x:32, y:258, w:186, h:46, c:"yellow", title:"Maps & borehole logs", size:16 },
     { id:"s5", x:32, y:314, w:186, h:46, c:"pink",   title:"Past PQ archive", size:16 },
 
-    { id:"ing", x:280, y:175, w:180, h:110, c:"blue", title:"Ingestion", sub:"hash + metadata", icon:"upload" },
-    { id:"ocr", x:520, y:175, w:190, h:110, c:"blue", title:"OCR & Layout", sub:"text · tables · conf.", icon:"scan" },
-    { id:"dt",  x:770, y:175, w:190, h:110, c:"blue", title:"Doc-type detector", size:17, sub:"GR · production · PQ", icon:"files" },
-    { id:"tbl", x:1020, y:60, w:180, h:90, c:"teal", title:"Table Mapping", sub:"rows, columns, cells", icon:"table" },
-    { id:"nlp", x:1020, y:190, w:180, h:90, c:"teal", title:"NLP Extraction", sub:"entities, units, dates", icon:"brain" },
+    { id:"ing", x:280, y:175, w:180, h:110, c:"blue", title:"Ingestion", sub:"Celery + Redis queue", icon:"upload" },
+    { id:"ocr", x:520, y:175, w:190, h:110, c:"blue", title:"OCR & Layout", sub:"PaddleOCR PP-OCRv4", icon:"scan" },
+    { id:"dt",  x:770, y:175, w:190, h:110, c:"blue", title:"Doc-type detector", size:17, sub:"MuRIL classifier", icon:"files" },
+    { id:"tbl", x:1020, y:60, w:180, h:90, c:"teal", title:"Table Mapping", sub:"PP-StructureV2", icon:"table" },
+    { id:"nlp", x:1020, y:190, w:180, h:90, c:"teal", title:"NLP Extraction", sub:"spaCy + MuRIL", icon:"brain" },
     { id:"chunk", x:770, y:410, w:190, h:90, c:"violet", title:"Chunk + Embed", sub:"BGE-M3 · हिन्दी + EN", icon:"stack" },
-    { id:"vec", t:"db", x:1020, y:400, w:180, h:150, c:"violet", title:"Vector Index", sub:"chunk + page", icon:"database" },
+    { id:"vec", t:"db", x:1020, y:400, w:180, h:150, c:"violet", title:"Vector Index", sub:"Qdrant", icon:"database" },
     { id:"val", x:1270, y:90, w:190, h:110, c:"orange", title:"Validation", sub:"units, totals, domain", icon:"calculator" },
     { id:"chk", x:1270, y:250, w:190, h:100, c:"red", title:"Conflict & Anomaly", size:17, sub:"cross-source + defs", icon:"warning" },
-    { id:"store", t:"db", x:1270, y:410, w:190, h:150, c:"green", title:"Golden Record", sub:"source·status·date", icon:"database" },
+    { id:"store", t:"db", x:1270, y:410, w:190, h:150, c:"green", title:"Golden Record", sub:"PostgreSQL", icon:"database" },
     { id:"rev", x:1500, y:250, w:180, h:100, c:"red", title:"Human Review", sub:"officer certifies", icon:"seal-check" },
     { id:"note", t:"note", c:"yellow", x:1500, y:80, w:185, h:80, title:"Maths by code —\nnever by the LLM" },
 
-    { id:"topic", x:40, y:660, w:220, h:90, c:"violet", title:"Keyphrase + Topics", size:17, sub:"session-wise", icon:"tag" },
+    { id:"topic", x:40, y:660, w:220, h:90, c:"violet", title:"Keyphrase + Topics", size:17, sub:"KeyBERT + BERTopic", icon:"tag" },
     { id:"wc", x:320, y:640, w:220, h:80, c:"violet", title:"Word Cloud", sub:"per session / year", icon:"cloud" },
     { id:"trend", x:320, y:780, w:220, h:100, c:"violet", title:"Rising topics", sub:"prepare a ready pack", icon:"chart-bar" },
 
     { id:"off", t:"circle", cx:660, cy:745, r:48, c:"blue", title:"Officer / PQ", size:15 },
-    { id:"router", x:740, y:700, w:190, h:90, c:"orange", title:"Query Router", sub:"fact · narrative · both", icon:"path" },
-    { id:"sql", x:1270, y:640, w:190, h:80, c:"green", title:"Text-to-SQL", sub:"on Golden Record", icon:"database" },
+    { id:"router", x:740, y:700, w:190, h:90, c:"orange", title:"Query Router", sub:"Qwen3 on vLLM", icon:"path" },
+    { id:"sql", x:1270, y:640, w:190, h:80, c:"green", title:"Text-to-SQL", sub:"Vanna + SQLGlot", icon:"database" },
     { id:"calc", x:1270, y:780, w:190, h:80, c:"orange", title:"Calculation", sub:"totals, % — code", icon:"calculator" },
-    { id:"hyb", x:1020, y:760, w:180, h:80, c:"violet", title:"Hybrid search", sub:"vector + BM25", icon:"magnifying-glass" },
-    { id:"llm", x:1500, y:740, w:180, h:120, c:"teal", title:"LLM phrases\nanswer", size:17, sub:"offline · cites all", icon:"chats" },
+    { id:"hyb", x:1020, y:760, w:180, h:80, c:"violet", title:"Hybrid search", sub:"Qdrant + BGE reranker", icon:"magnifying-glass" },
+    { id:"llm", x:1500, y:740, w:180, h:120, c:"teal", title:"LLM phrases\nanswer", size:17, sub:"Qwen3 on vLLM", icon:"chats" },
 
     { id:"checks", x:1380, y:1000, w:300, h:110, c:"red", title:"Answer checks", sub:"grounding · totals · past · cites", icon:"shield-check" },
     { id:"flag", x:1040, y:1010, w:240, h:90, c:"red", title:"Flag for officer", sub:"or regenerate" },
 
-    { id:"rep", x:1380, y:1210, w:300, h:110, c:"green", title:"Report Builder", sub:"gazette · Hindi + English", icon:"article" },
+    { id:"rep", x:1380, y:1210, w:300, h:110, c:"green", title:"Report Builder", sub:"docxtpl · Hindi + English", icon:"article" },
     { id:"appr", x:1040, y:1220, w:240, h:90, c:"red", title:"Officer approves", size:17, sub:"click number → source", icon:"seal-check" },
-    { id:"exp", x:720, y:1220, w:220, h:90, c:"green", title:"Export", sub:"PDF / DOCX", icon:"export" },
+    { id:"exp", x:720, y:1220, w:220, h:90, c:"green", title:"Export", sub:"LibreOffice → PDF / DOCX", icon:"export" },
     { id:"mem", x:400, y:1220, w:220, h:90, c:"violet", title:"Answer memory", size:17, sub:"approved answers", icon:"clock-counter-clockwise" },
     { id:"legend", t:"note", c:"pink", x:20, y:1160, w:340, h:170, title:"PS Module 1 · Reports → Zone 5\nPS Module 2 · Word Cloud → Zone 2\nPS Module 3 · AI Query → Zones 3 + 4\nTraceability → Golden Record +\nZone 4 checks" },
 
-    { id:"z6", x:20, y:1420, w:1670, h:62, c:"gray", title:"Zone 6 · across everything —  RBAC (who sees what)  ·  Audit log (who changed which figure)  ·  Fully offline, on-prem (NIC / CMPDI)  ·  No external API", size:17 }
+    { id:"z6", x:20, y:1420, w:1670, h:62, c:"gray", title:"Zone 6 · across everything —  Keycloak RBAC  ·  Audit log  ·  Prometheus + Grafana  ·  Nginx  ·  Docker Compose on-prem (NIC / CMPDI)  ·  No external API", size:17 }
   ],
   edges: [
     { a:"s1", as:"r", b:"ing", bs:"l", mx:252 },
@@ -456,52 +461,60 @@ const PIPE = {
 
 /* ===================== 2. Architecture ===================== */
 const ARCH = {
-  W: 1320, H: 780,
+  W: 1320, H: 800,
   frames: [
-    { x: 190, y: 26, w: 900, h: 730, label: "Government network boundary — CMPDI intranet or NIC MeghRaj", color:"#2f9e44" },
-    { x: 668, y: 62, w: 214, h: 680, label: "Services", color:"#868e96" }
+    { x: 190, y: 20, w: 1115, h: 770, label: "Docker Compose · on-prem (NIC MeghRaj / CMPDI data centre)", color:"#2f9e44" },
+    { x: 670, y: 56, w: 212, h: 470, label: "FastAPI services", color:"#868e96" },
+    { x: 670, y: 540, w: 212, h: 240, label: "Async pipeline", color:"#868e96" }
   ],
   nodes: [
-    { id:"off", t:"circle", cx:90, cy:390, r:62, c:"blue", title:"Officer", sub:"Ministry / CMPDI" },
-    { id:"portal", x:230, y:340, w:170, h:100, c:"blue", title:"Officer Portal", sub:"English + हिन्दी", icon:"monitor" },
-    { id:"gw", x:455, y:340, w:170, h:100, c:"gray", title:"API Gateway", sub:"login + roles", icon:"plugs-connected" },
+    { id:"off", t:"circle", cx:90, cy:385, r:62, c:"blue", title:"Officer", sub:"Ministry / CMPDI" },
+    { id:"nginx", x:220, y:340, w:170, h:90, c:"gray", title:"Nginx", sub:"proxy + TLS", icon:"shield-check" },
+    { id:"portal", x:440, y:180, w:190, h:90, c:"blue", title:"React Portal", sub:"English + हिन्दी", icon:"monitor" },
+    { id:"api", x:440, y:340, w:190, h:90, c:"gray", title:"FastAPI", sub:"API gateway", icon:"plugs-connected" },
+    { id:"kc", x:440, y:500, w:190, h:90, c:"red", title:"Keycloak", sub:"SSO · RBAC", icon:"key" },
+    { id:"mon", x:220, y:660, w:190, h:90, c:"yellow", title:"Prometheus", size:17, sub:"+ Grafana", icon:"chart-bar" },
 
-    { id:"s1", x:690, y:92,  w:170, h:70, c:"blue",   title:"Doc Processing", sub:"OCR · doc type", size:16, icon:"scan" },
-    { id:"s2", x:690, y:174, w:170, h:70, c:"orange", title:"Validation", sub:"domain rules", size:16, icon:"calculator" },
-    { id:"s3", x:690, y:256, w:170, h:70, c:"red",    title:"Conflict Check", sub:"cross-source", size:16, icon:"warning" },
-    { id:"s4", x:690, y:338, w:170, h:70, c:"orange", title:"Query Router", sub:"SQL + RAG", size:16, icon:"path" },
-    { id:"s5", x:690, y:420, w:170, h:70, c:"red",    title:"Answer Checks", sub:"grounding · totals", size:16, icon:"shield-check" },
-    { id:"s6", x:690, y:502, w:170, h:70, c:"violet", title:"Topic Engine", sub:"rising topics", size:16, icon:"tag" },
-    { id:"s7", x:690, y:584, w:170, h:70, c:"green",  title:"Report Builder", sub:"Hindi + English", size:16, icon:"article" },
+    { id:"s1", x:690, y:92,  w:172, h:60, c:"orange", title:"Query Router", sub:"fact · narrative", size:16, icon:"path" },
+    { id:"s2", x:690, y:162, w:172, h:60, c:"green",  title:"Text-to-SQL", sub:"Vanna + SQLGlot", size:16, icon:"database" },
+    { id:"s3", x:690, y:232, w:172, h:60, c:"violet", title:"Hybrid search", sub:"BGE reranker", size:16, icon:"magnifying-glass" },
+    { id:"s4", x:690, y:302, w:172, h:60, c:"red",    title:"Answer Checks", sub:"grounding · totals", size:16, icon:"shield-check" },
+    { id:"s5", x:690, y:372, w:172, h:60, c:"green",  title:"Report Builder", sub:"docxtpl · LibreOffice", size:16, icon:"article" },
+    { id:"s6", x:690, y:442, w:172, h:60, c:"red",    title:"Review & Conflict", size:15, sub:"officer decisions", icon:"warning" },
 
-    { id:"d1", t:"db", x:915, y:80,  w:140, h:110, c:"green",  title:"Documents", size:16 },
-    { id:"d2", t:"db", x:915, y:215, w:140, h:120, c:"green",  title:"Golden\nRecord", size:16 },
-    { id:"d3", t:"db", x:915, y:360, w:140, h:120, c:"violet", title:"Vector\nIndex", size:16 },
-    { id:"d5", t:"db", x:915, y:500, w:140, h:110, c:"pink",   title:"Past PQ\narchive", size:16 },
-    { id:"d4", t:"db", x:915, y:630, w:140, h:100, c:"yellow", title:"Audit Ledger", size:15 },
+    { id:"redis", x:690, y:580, w:172, h:60, c:"red", title:"Redis", sub:"job queue", size:16 },
+    { id:"cel", x:690, y:670, w:172, h:90, c:"teal", title:"Celery workers", size:16, sub:"OCR · NLP · embed", icon:"gear" },
 
-    { id:"llm", x:1120, y:330, w:180, h:100, c:"teal", title:"Local LLM", sub:"offline · open-source", icon:"chats" },
-    { id:"ext", t:"cloud", x:1115, y:560, w:190, h:150, c:"gray", title:"Outside AI\nAPIs", size:16, x_mark:true }
+    { id:"d1", t:"db", x:912, y:70,  w:150, h:130, c:"green",  title:"Golden Record", sub:"PostgreSQL", size:15 },
+    { id:"d2", t:"db", x:912, y:225, w:150, h:130, c:"violet", title:"Vector Index", sub:"Qdrant", size:15 },
+    { id:"d3", t:"db", x:912, y:380, w:150, h:130, c:"pink",   title:"PQ + Audit", sub:"PostgreSQL", size:15 },
+    { id:"d4", t:"db", x:912, y:535, w:150, h:120, c:"yellow", title:"Source files", sub:"volume", size:15 },
+
+    { id:"llm", x:1110, y:90, w:175, h:100, c:"teal", title:"Qwen3", sub:"served on vLLM", icon:"chats" },
+    { id:"ml", x:1110, y:640, w:175, h:110, c:"teal", title:"ML models", size:17, sub:"PaddleOCR·MuRIL·BGE", icon:"brain" },
+    { id:"ext", t:"cloud", x:1105, y:280, w:190, h:150, c:"gray", title:"Outside AI\nAPIs", size:16, x_mark:true }
   ],
   edges: [
-    { a:"off", as:"r", b:"portal", bs:"l", label:"asks", both:true },
-    { a:"portal", as:"r", b:"gw", bs:"l", label:"REST" },
-    { a:"gw", as:"r", b:"s1", bs:"l", mx:655 },
-    { a:"gw", as:"r", b:"s2", bs:"l", mx:655 },
-    { a:"gw", as:"r", b:"s3", bs:"l", mx:655 },
-    { a:"gw", as:"r", b:"s4", bs:"l", mx:655 },
-    { a:"gw", as:"r", b:"s5", bs:"l", mx:655 },
-    { a:"gw", as:"r", b:"s6", bs:"l", mx:655 },
-    { a:"gw", as:"r", b:"s7", bs:"l", mx:655 },
-    { a:"s1", as:"r", b:"d1", bs:"l", bo:-8 },
-    { a:"s2", as:"r", b:"d2", bs:"l", bo:-30 },
-    { a:"s3", as:"r", b:"d2", bs:"l", bo:15 },
-    { a:"s4", as:"r", b:"d3", bs:"l", bo:-30 },
-    { a:"s4", as:"r", b:"llm", bs:"l", via:[[895,373],[895,347],[1085,347],[1085,380]], label:"context", lp:[1090, 305] },
-    { a:"s6", as:"r", b:"d5", bs:"l" },
-    { a:"s7", as:"r", b:"d5", bs:"l", bo:30, dash:true, col:"#6741d9" },
-    { a:"gw", as:"b", b:"d4", bs:"l", via:[[540,680]], label:"every action logged", lp:[600, 680] },
-    { a:"llm", as:"b", b:"ext", bs:"t", dash:true, col:"#e03131", label:"never called" }
+    { a:"off", as:"r", b:"nginx", bs:"l", label:"HTTPS", both:true },
+    { a:"nginx", as:"r", b:"portal", bs:"l", mx:415 },
+    { a:"nginx", as:"r", b:"api", bs:"l", label:"/api" },
+    { a:"api", as:"b", b:"kc", bs:"t", label:"token", both:true },
+    { a:"api", as:"r", b:"s1", bs:"l", mx:655 },
+    { a:"api", as:"r", b:"s2", bs:"l", mx:655 },
+    { a:"api", as:"r", b:"s3", bs:"l", mx:655 },
+    { a:"api", as:"r", b:"s4", bs:"l", mx:655 },
+    { a:"api", as:"r", b:"s5", bs:"l", mx:655 },
+    { a:"api", as:"r", b:"s6", bs:"l", mx:655 },
+    { a:"api", as:"r", b:"redis", bs:"l", mx:655, label:"jobs", lp:[655, 590] },
+    { a:"redis", as:"b", b:"cel", bs:"t" },
+    { a:"s1", as:"r", b:"llm", bs:"l", via:[[890,122],[890,40],[1090,40],[1090,140]], label:"prompt", lp:[990, 40] },
+    { a:"s2", as:"r", b:"d1", bs:"l", bo:20 },
+    { a:"s3", as:"r", b:"d2", bs:"l", bo:-20 },
+    { a:"s6", as:"r", b:"d3", bs:"l", bo:20 },
+    { a:"cel", as:"r", b:"ml", bs:"l", label:"inference", lp:[990, 715] },
+    { a:"cel", as:"r", b:"d4", bs:"l", bo:10, via:[[895,700],[895,605]] },
+    { a:"llm", as:"b", b:"ext", bs:"t", dash:true, col:"#e03131", label:"no egress" },
+    { a:"mon", as:"t", b:"nginx", bs:"b", dash:true, col:"#868e96", label:"metrics" }
   ]
 };
 
@@ -511,10 +524,10 @@ const LIFE = {
   nodes: [
     { id:"off", t:"circle", cx:60, cy:150, r:50, c:"blue", title:"Officer" },
     { id:"portal", x:150, y:110, w:130, h:80, c:"blue", title:"Portal", size:17 },
-    { id:"router", x:340, y:110, w:140, h:80, c:"orange", title:"Query\nRouter", size:17 },
-    { id:"store", t:"db", x:540, y:20, w:140, h:110, c:"green", title:"Golden\nRecord", size:16 },
-    { id:"vec", t:"db", x:540, y:180, w:140, h:110, c:"violet", title:"Vector\nIndex", size:16 },
-    { id:"llm", x:740, y:110, w:140, h:80, c:"teal", title:"Local LLM", size:17 },
+    { id:"router", x:340, y:110, w:140, h:80, c:"orange", title:"Query Router", size:15, sub:"Qwen3" },
+    { id:"store", t:"db", x:540, y:20, w:140, h:110, c:"green", title:"Golden Record", size:15, sub:"PostgreSQL" },
+    { id:"vec", t:"db", x:540, y:180, w:140, h:110, c:"violet", title:"Vector Index", size:15, sub:"Qdrant" },
+    { id:"llm", x:740, y:110, w:140, h:80, c:"teal", title:"Qwen3", size:17, sub:"vLLM" },
     { id:"chk", x:930, y:110, w:140, h:80, c:"red", title:"Answer\nChecks", size:17 },
     { id:"appr", x:1110, y:110, w:140, h:80, c:"red", title:"Officer\nApproves", size:17 },
     { id:"out", x:1290, y:110, w:120, h:80, c:"green", title:"Signed\nReply", size:17 },
