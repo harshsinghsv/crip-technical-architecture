@@ -96,8 +96,8 @@
 
 <section>
   <div class="wrap">
-    <h2>1 · Document Intelligence Pipeline</h2>
-    <p class="cap">How a scanned coal report becomes a certified, cited figure. Follow the arrows: every label says what data is moving at that step.</p>
+    <h2>1 · End-to-end pipeline</h2>
+    <p class="cap">From a scanned coal report to an approved, bilingual Parliament reply. Numbers come from the Golden Record by SQL and code; narrative comes from the Vector Index; the offline LLM only phrases the answer, which is checked and then approved by an officer before export.</p>
     <div class="canvas"><svg id="pipe" role="img" aria-label="Document intelligence pipeline diagram"></svg></div>
     <div class="legend">
       <span><i></i> data flow</span>
@@ -111,7 +111,7 @@
 <section class="band">
   <div class="wrap">
     <h2>2 · System Architecture</h2>
-    <p class="cap">Everything runs inside the government network boundary. No component calls an outside AI service.</p>
+    <p class="cap">Everything runs inside the government network boundary. The LLM runs locally; no component calls an outside AI service.</p>
     <div class="canvas"><svg id="arch" role="img" aria-label="System architecture diagram"></svg></div>
   </div>
 </section>
@@ -119,7 +119,7 @@
 <section>
   <div class="wrap">
     <h2>3 · Request Lifecycle</h2>
-    <p class="cap">One Parliamentary or Ministry question, step by step — from the officer asking it to a signed briefing note.</p>
+    <p class="cap">One Parliamentary question, step by step — routed to facts or narrative, drafted by the local LLM, checked, approved by an officer, and remembered.</p>
     <div class="canvas"><svg id="life" role="img" aria-label="Request lifecycle diagram"></svg></div>
   </div>
 </section>
@@ -137,6 +137,10 @@
       <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/python/4B8BBE" alt="Python"><b>Python</b><span>Processing services</span></div>
       <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/pydantic/E92063" alt="Pydantic"><b>Pydantic</b><span>Typed data contracts</span></div>
       <div class="stack-card reveal"><img class="logo" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/scan-bold.svg" alt="OCR" style="filter:invert(37%) sepia(97%) saturate(432%) hue-rotate(131deg);"><b>PyMuPDF + OCR</b><span>Document parsing</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/postgresql/4169E1" alt="PostgreSQL"><b>PostgreSQL + pgvector</b><span>Golden Record + Vector Index</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/ollama/000000" alt="Ollama"><b>Local LLM (Ollama)</b><span>Offline, open-source model</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.simpleicons.org/huggingface/FFB000" alt="Hugging Face"><b>BGE-M3</b><span>Hindi + English embeddings</span></div>
+      <div class="stack-card reveal"><img class="logo" src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/bold/tag-bold.svg" alt="Topics" style="filter:invert(28%) sepia(80%) saturate(2000%) hue-rotate(250deg);"><b>KeyBERT / BERTopic</b><span>Session-wise topics</span></div>
     </div>
   </div>
 </section>
@@ -353,81 +357,131 @@ function render(svgId, spec){
   });
 }
 
-/* ===================== 1. Pipeline ===================== */
+/* ===================== 1. End-to-end pipeline (6 zones) ===================== */
 const PIPE = {
-  W: 1300, H: 810,
-  frames: [{ x: 8, y: 108, w: 186, h: 350, label: "Source files" }],
+  W: 1710, H: 1500,
+  frames: [
+    { x: 10, y: 10, w: 1690, h: 570, label: "Zone 1 · Data ingestion", color:"#1971c2" },
+    { x: 20, y: 50, w: 210, h: 325, label: "Source files", color:"#868e96" },
+    { x: 10, y: 600, w: 570, h: 330, label: "Zone 2 · Topic intelligence (Word Cloud)", color:"#6741d9" },
+    { x: 600, y: 600, w: 1100, h: 330, label: "Zone 3 · Query & retrieval", color:"#0c8599" },
+    { x: 1010, y: 950, w: 690, h: 180, label: "Zone 4 · Trust layer", color:"#e03131" },
+    { x: 380, y: 1150, w: 1320, h: 250, label: "Zone 5 · Report generation", color:"#2f9e44" }
+  ],
   nodes: [
-    { id:"s1", x:20, y:150, w:160, h:58, c:"yellow", title:"Scanned PDFs", size:17 },
-    { id:"s2", x:20, y:228, w:160, h:58, c:"yellow", title:"Digital PDFs", size:17 },
-    { id:"s3", x:20, y:306, w:160, h:58, c:"yellow", title:"Excel / CSV", size:17 },
-    { id:"s4", x:20, y:384, w:160, h:58, c:"yellow", title:"Maps & images", size:17 },
+    { id:"s1", x:32, y:90,  w:186, h:46, c:"yellow", title:"Scanned PDFs", size:16 },
+    { id:"s2", x:32, y:146, w:186, h:46, c:"yellow", title:"Digital PDFs / DOCX", size:16 },
+    { id:"s3", x:32, y:202, w:186, h:46, c:"yellow", title:"Spreadsheets / MIS", size:16 },
+    { id:"s4", x:32, y:258, w:186, h:46, c:"yellow", title:"Maps & borehole logs", size:16 },
+    { id:"s5", x:32, y:314, w:186, h:46, c:"pink",   title:"Past PQ archive", size:16 },
 
-    { id:"ing", x:280, y:230, w:170, h:110, c:"blue", title:"Ingestion", sub:"fingerprint + metadata", icon:"upload" },
-    { id:"ocr", x:550, y:230, w:180, h:110, c:"blue", title:"OCR & Layout", sub:"deskew, text, regions", icon:"scan" },
-    { id:"nlp", x:830, y:110, w:170, h:90, c:"teal", title:"NLP Extraction", sub:"entities, metrics, units", icon:"brain" },
-    { id:"tbl", x:830, y:370, w:170, h:90, c:"teal", title:"Table Mapping", sub:"rows, columns, cells", icon:"table" },
-    { id:"topic", x:1100, y:20, w:180, h:80, c:"violet", title:"Word Cloud", sub:"topics & trends", icon:"tag" },
-    { id:"val", x:1100, y:230, w:180, h:110, c:"orange", title:"Validation", sub:"units, totals, variance", icon:"calculator" },
+    { id:"ing", x:280, y:175, w:180, h:110, c:"blue", title:"Ingestion", sub:"hash + metadata", icon:"upload" },
+    { id:"ocr", x:520, y:175, w:190, h:110, c:"blue", title:"OCR & Layout", sub:"text · tables · conf.", icon:"scan" },
+    { id:"dt",  x:770, y:175, w:190, h:110, c:"blue", title:"Doc-type detector", size:17, sub:"GR · production · PQ", icon:"files" },
+    { id:"tbl", x:1020, y:60, w:180, h:90, c:"teal", title:"Table Mapping", sub:"rows, columns, cells", icon:"table" },
+    { id:"nlp", x:1020, y:190, w:180, h:90, c:"teal", title:"NLP Extraction", sub:"entities, units, dates", icon:"brain" },
+    { id:"chunk", x:770, y:410, w:190, h:90, c:"violet", title:"Chunk + Embed", sub:"BGE-M3 · हिन्दी + EN", icon:"stack" },
+    { id:"vec", t:"db", x:1020, y:400, w:180, h:150, c:"violet", title:"Vector Index", sub:"chunk + page", icon:"database" },
+    { id:"val", x:1270, y:90, w:190, h:110, c:"orange", title:"Validation", sub:"units, totals, domain", icon:"calculator" },
+    { id:"chk", x:1270, y:250, w:190, h:100, c:"red", title:"Conflict & Anomaly", size:17, sub:"cross-source + defs", icon:"warning" },
+    { id:"store", t:"db", x:1270, y:410, w:190, h:150, c:"green", title:"Golden Record", sub:"source·status·date", icon:"database" },
+    { id:"rev", x:1500, y:250, w:180, h:100, c:"red", title:"Human Review", sub:"officer certifies", icon:"seal-check" },
+    { id:"note", t:"note", c:"yellow", x:1500, y:80, w:185, h:80, title:"Maths by code —\nnever by the LLM" },
 
-    { id:"chk", x:1100, y:495, w:180, h:100, c:"red", title:"Conflict &\nAnomaly Check", size:17, icon:"warning" },
-    { id:"store", t:"db", x:830, y:470, w:170, h:150, c:"green", title:"Fact Store", sub:"value + page + cell", icon:"database" },
-    { id:"qa", x:550, y:495, w:180, h:100, c:"blue", title:"Grounded Q&A", sub:"answers with citations", icon:"magnifying-glass" },
-    { id:"rep", x:280, y:495, w:170, h:100, c:"blue", title:"Report Builder", sub:"gazette format", icon:"article" },
-    { id:"out", x:20, y:495, w:160, h:100, c:"green", title:"Briefing Note", sub:"PDF / DOCX", icon:"export" },
+    { id:"topic", x:40, y:660, w:220, h:90, c:"violet", title:"Keyphrase + Topics", size:17, sub:"session-wise", icon:"tag" },
+    { id:"wc", x:320, y:640, w:220, h:80, c:"violet", title:"Word Cloud", sub:"per session / year", icon:"cloud" },
+    { id:"trend", x:320, y:780, w:220, h:100, c:"violet", title:"Rising topics", sub:"prepare a ready pack", icon:"chart-bar" },
 
-    { id:"rev", x:1100, y:700, w:180, h:90, c:"red", title:"Human Review", sub:"officer certifies", icon:"seal-check" },
-    { id:"off", t:"circle", cx:640, cy:735, r:52, c:"blue", title:"Officer", size:18 },
+    { id:"off", t:"circle", cx:660, cy:745, r:48, c:"blue", title:"Officer / PQ", size:15 },
+    { id:"router", x:740, y:700, w:190, h:90, c:"orange", title:"Query Router", sub:"fact · narrative · both", icon:"path" },
+    { id:"sql", x:1270, y:640, w:190, h:80, c:"green", title:"Text-to-SQL", sub:"on Golden Record", icon:"database" },
+    { id:"calc", x:1270, y:780, w:190, h:80, c:"orange", title:"Calculation", sub:"totals, % — code", icon:"calculator" },
+    { id:"hyb", x:1020, y:760, w:180, h:80, c:"violet", title:"Hybrid search", sub:"vector + BM25", icon:"magnifying-glass" },
+    { id:"llm", x:1500, y:740, w:180, h:120, c:"teal", title:"LLM phrases\nanswer", size:17, sub:"offline · cites all", icon:"chats" },
 
-    { id:"n1", t:"note", c:"pink", x:250, y:680, w:230, h:90, title:"Every number links\nback to its exact\npage and cell" },
-    { id:"n2", t:"note", c:"yellow", x:530, y:60, w:230, h:92, title:"No model guesses\nthe maths —\nformulas only" }
+    { id:"checks", x:1380, y:1000, w:300, h:110, c:"red", title:"Answer checks", sub:"grounding · totals · past · cites", icon:"shield-check" },
+    { id:"flag", x:1040, y:1010, w:240, h:90, c:"red", title:"Flag for officer", sub:"or regenerate" },
+
+    { id:"rep", x:1380, y:1210, w:300, h:110, c:"green", title:"Report Builder", sub:"gazette · Hindi + English", icon:"article" },
+    { id:"appr", x:1040, y:1220, w:240, h:90, c:"red", title:"Officer approves", size:17, sub:"click number → source", icon:"seal-check" },
+    { id:"exp", x:720, y:1220, w:220, h:90, c:"green", title:"Export", sub:"PDF / DOCX", icon:"export" },
+    { id:"mem", x:400, y:1220, w:220, h:90, c:"violet", title:"Answer memory", size:17, sub:"approved answers", icon:"clock-counter-clockwise" },
+    { id:"legend", t:"note", c:"pink", x:20, y:1160, w:340, h:170, title:"PS Module 1 · Reports → Zone 5\nPS Module 2 · Word Cloud → Zone 2\nPS Module 3 · AI Query → Zones 3 + 4\nTraceability → Golden Record +\nZone 4 checks" },
+
+    { id:"z6", x:20, y:1420, w:1670, h:62, c:"gray", title:"Zone 6 · across everything —  RBAC (who sees what)  ·  Audit log (who changed which figure)  ·  Fully offline, on-prem (NIC / CMPDI)  ·  No external API", size:17 }
   ],
   edges: [
-    { a:"s1", as:"r", b:"ing", bs:"l", mx:232 },
-    { a:"s2", as:"r", b:"ing", bs:"l", mx:232 },
-    { a:"s3", as:"r", b:"ing", bs:"l", mx:232 },
-    { a:"s4", as:"r", b:"ing", bs:"l", mx:232 },
-    { a:"ing", as:"r", b:"ocr", bs:"l", label:"pages" },
-    { a:"ocr", as:"r", b:"nlp", bs:"l", label:"text", lp:[780, 205] },
-    { a:"ocr", as:"r", b:"tbl", bs:"l", label:"tables", lp:[780, 365] },
-    { a:"nlp", as:"t", b:"topic", bs:"l", label:"key phrases" },
-    { a:"nlp", as:"r", b:"val", bs:"l", bo:-22, label:"facts", lp:[1050, 210] },
-    { a:"tbl", as:"r", b:"val", bs:"l", bo:22, label:"cells", lp:[1050, 360] },
-    { a:"val", as:"b", b:"chk", bs:"t", label:"checked facts" },
-    { a:"chk", as:"l", b:"store", bs:"r", label:"trusted" },
-    { a:"chk", as:"b", b:"rev", bs:"t", dash:true, col:"#e03131", label:"mismatch!" },
-    { a:"rev", as:"l", b:"store", bs:"b", label:"certified value" },
-    { a:"store", as:"l", b:"qa", bs:"r", label:"evidence" },
-    { a:"qa", as:"l", b:"rep", bs:"r", label:"answer" },
-    { a:"rep", as:"l", b:"out", bs:"r", label:"export" },
-    { a:"off", as:"t", b:"qa", bs:"b", label:"asks" }
+    { a:"s1", as:"r", b:"ing", bs:"l", mx:252 },
+    { a:"s2", as:"r", b:"ing", bs:"l", mx:252 },
+    { a:"s3", as:"r", b:"ing", bs:"l", mx:252 },
+    { a:"s4", as:"r", b:"ing", bs:"l", mx:252 },
+    { a:"s5", as:"r", b:"ing", bs:"l", mx:252 },
+    { a:"ing", as:"r", b:"ocr", bs:"l", label:"file" },
+    { a:"ocr", as:"r", b:"dt", bs:"l", label:"pages" },
+    { a:"dt", as:"r", b:"tbl", bs:"l", mx:990, label:"tables", lp:[990, 150] },
+    { a:"dt", as:"r", b:"nlp", bs:"l", mx:990 },
+    { a:"dt", as:"b", b:"chunk", bs:"t", label:"narrative text" },
+    { a:"chunk", as:"r", b:"vec", bs:"l", label:"vectors", lp:[990, 388] },
+    { a:"tbl", as:"r", b:"val", bs:"l", bo:-22, mx:1235 },
+    { a:"nlp", as:"r", b:"val", bs:"l", bo:22, mx:1235, label:"facts", lp:[1235, 240] },
+    { a:"note", as:"l", b:"val", bs:"r", dash:true, col:"#868e96" },
+    { a:"val", as:"b", b:"chk", bs:"t", label:"checked" },
+    { a:"chk", as:"b", b:"store", bs:"t", label:"trusted" },
+    { a:"chk", as:"r", b:"rev", bs:"l", dash:true, col:"#e03131", label:"mismatch", lp:[1480, 232] },
+    { a:"rev", as:"b", b:"store", bs:"r", bo:-25, label:"certified", lp:[1590, 440] },
+
+    { a:"s5", as:"b", b:"topic", bs:"t", label:"past questions", lp:[150, 470] },
+    { a:"topic", as:"r", b:"wc", bs:"l", mx:290 },
+    { a:"topic", as:"r", b:"trend", bs:"l", mx:290 },
+
+    { a:"off", as:"r", b:"router", bs:"l", label:"asks", lp:[712, 690] },
+    { a:"router", as:"r", b:"sql", bs:"l", mx:980, label:"fact", lp:[1040, 680] },
+    { a:"router", as:"r", b:"hyb", bs:"l", mx:980, label:"narrative", lp:[980, 800] },
+    { a:"store", as:"b", b:"sql", bs:"t", label:"SELECT" },
+    { a:"vec", as:"b", b:"hyb", bs:"t", label:"top chunks" },
+    { a:"sql", as:"b", b:"calc", bs:"t", label:"rows" },
+    { a:"calc", as:"r", b:"llm", bs:"l", bo:20 },
+    { a:"hyb", as:"b", b:"llm", bs:"l", bo:-20, via:[[1110,905],[1480,905],[1480,780]], label:"passages", lp:[1300, 905] },
+
+    { a:"llm", as:"b", b:"checks", bs:"t", label:"draft answer" },
+    { a:"checks", as:"l", b:"flag", bs:"r", dash:true, col:"#e03131", label:"fail" },
+    { a:"checks", as:"b", b:"rep", bs:"t", label:"pass" },
+    { a:"store", as:"r", b:"rep", bs:"r", bo:35, via:[[1695,520],[1695,1265]], dash:true, col:"#2f9e44", label:"annexure numbers", lp:[1620, 1170] },
+    { a:"rep", as:"l", b:"appr", bs:"r", label:"draft reply" },
+    { a:"appr", as:"l", b:"exp", bs:"r", label:"approved" },
+    { a:"exp", as:"l", b:"mem", bs:"r", label:"saved" },
+    { a:"mem", as:"t", b:"s5", bs:"l", dash:true, col:"#6741d9", via:[[510,1180],[590,1180],[590,590],[15,590],[15,337]], label:"memory loop", lp:[590, 1060] }
   ]
 };
 
 /* ===================== 2. Architecture ===================== */
 const ARCH = {
-  W: 1300, H: 760,
+  W: 1320, H: 780,
   frames: [
-    { x: 190, y: 26, w: 880, h: 710, label: "Government network boundary — CMPDI intranet or NIC MeghRaj", color:"#2f9e44" },
-    { x: 668, y: 62, w: 214, h: 610, label: "Services", color:"#868e96" }
+    { x: 190, y: 26, w: 900, h: 730, label: "Government network boundary — CMPDI intranet or NIC MeghRaj", color:"#2f9e44" },
+    { x: 668, y: 62, w: 214, h: 680, label: "Services", color:"#868e96" }
   ],
   nodes: [
-    { id:"off", t:"circle", cx:90, cy:380, r:62, c:"blue", title:"Officer", sub:"Ministry / CMPDI" },
-    { id:"portal", x:230, y:330, w:170, h:100, c:"blue", title:"Officer Portal", sub:"English + हिन्दी", icon:"monitor" },
-    { id:"gw", x:455, y:330, w:170, h:100, c:"gray", title:"API Gateway", sub:"login + roles", icon:"plugs-connected" },
+    { id:"off", t:"circle", cx:90, cy:390, r:62, c:"blue", title:"Officer", sub:"Ministry / CMPDI" },
+    { id:"portal", x:230, y:340, w:170, h:100, c:"blue", title:"Officer Portal", sub:"English + हिन्दी", icon:"monitor" },
+    { id:"gw", x:455, y:340, w:170, h:100, c:"gray", title:"API Gateway", sub:"login + roles", icon:"plugs-connected" },
 
-    { id:"s1", x:690, y:100, w:170, h:80, c:"teal", title:"Doc Processing", sub:"OCR + NLP", size:17, icon:"scan" },
-    { id:"s2", x:690, y:210, w:170, h:80, c:"orange", title:"Validation", sub:"exact maths", size:17, icon:"calculator" },
-    { id:"s3", x:690, y:320, w:170, h:80, c:"teal", title:"Q&A Engine", sub:"cited answers", size:17, icon:"magnifying-glass" },
-    { id:"s4", x:690, y:430, w:170, h:80, c:"violet", title:"Topic Engine", sub:"word cloud", size:17, icon:"tag" },
-    { id:"s5", x:690, y:540, w:170, h:80, c:"red", title:"Conflict Check", sub:"never averages", size:17, icon:"warning" },
+    { id:"s1", x:690, y:92,  w:170, h:70, c:"blue",   title:"Doc Processing", sub:"OCR · doc type", size:16, icon:"scan" },
+    { id:"s2", x:690, y:174, w:170, h:70, c:"orange", title:"Validation", sub:"domain rules", size:16, icon:"calculator" },
+    { id:"s3", x:690, y:256, w:170, h:70, c:"red",    title:"Conflict Check", sub:"cross-source", size:16, icon:"warning" },
+    { id:"s4", x:690, y:338, w:170, h:70, c:"orange", title:"Query Router", sub:"SQL + RAG", size:16, icon:"path" },
+    { id:"s5", x:690, y:420, w:170, h:70, c:"red",    title:"Answer Checks", sub:"grounding · totals", size:16, icon:"shield-check" },
+    { id:"s6", x:690, y:502, w:170, h:70, c:"violet", title:"Topic Engine", sub:"rising topics", size:16, icon:"tag" },
+    { id:"s7", x:690, y:584, w:170, h:70, c:"green",  title:"Report Builder", sub:"Hindi + English", size:16, icon:"article" },
 
-    { id:"d1", t:"db", x:915, y:80, w:130, h:120, c:"green", title:"Documents", size:17 },
-    { id:"d2", t:"db", x:915, y:230, w:130, h:120, c:"green", title:"Fact Store", size:17 },
-    { id:"d3", t:"db", x:915, y:380, w:130, h:120, c:"green", title:"Evidence\nIndex", size:17 },
-    { id:"d4", t:"db", x:915, y:530, w:130, h:120, c:"yellow", title:"Audit\nLedger", size:17 },
+    { id:"d1", t:"db", x:915, y:80,  w:140, h:110, c:"green",  title:"Documents", size:16 },
+    { id:"d2", t:"db", x:915, y:215, w:140, h:120, c:"green",  title:"Golden\nRecord", size:16 },
+    { id:"d3", t:"db", x:915, y:360, w:140, h:120, c:"violet", title:"Vector\nIndex", size:16 },
+    { id:"d5", t:"db", x:915, y:500, w:140, h:110, c:"pink",   title:"Past PQ\narchive", size:16 },
+    { id:"d4", t:"db", x:915, y:630, w:140, h:100, c:"yellow", title:"Audit Ledger", size:15 },
 
-    { id:"ext", t:"cloud", x:1100, y:300, w:190, h:150, c:"gray", title:"Outside AI\nAPIs", size:16, x_mark:true }
+    { id:"llm", x:1120, y:330, w:180, h:100, c:"teal", title:"Local LLM", sub:"offline · open-source", icon:"chats" },
+    { id:"ext", t:"cloud", x:1115, y:560, w:190, h:150, c:"gray", title:"Outside AI\nAPIs", size:16, x_mark:true }
   ],
   edges: [
     { a:"off", as:"r", b:"portal", bs:"l", label:"asks", both:true },
@@ -437,36 +491,48 @@ const ARCH = {
     { a:"gw", as:"r", b:"s3", bs:"l", mx:655 },
     { a:"gw", as:"r", b:"s4", bs:"l", mx:655 },
     { a:"gw", as:"r", b:"s5", bs:"l", mx:655 },
-    { a:"s1", as:"r", b:"d1", bs:"l", ao:0, bo:0 },
-    { a:"s2", as:"r", b:"d2", bs:"l" },
-    { a:"s3", as:"r", b:"d3", bs:"l" },
-    { a:"s4", as:"r", b:"d1", bs:"b", via:[[895,470],[895,215],[980,215]] },
-    { a:"s5", as:"r", b:"d4", bs:"l" },
-    { a:"gw", as:"b", b:"d4", bs:"b", via:[[540,700],[980,700]], label:"every action logged" },
-    { a:"d3", as:"r", b:"ext", bs:"l", dash:true, col:"#e03131", label:"never called", lp:[1195, 480] }
+    { a:"gw", as:"r", b:"s6", bs:"l", mx:655 },
+    { a:"gw", as:"r", b:"s7", bs:"l", mx:655 },
+    { a:"s1", as:"r", b:"d1", bs:"l", bo:-8 },
+    { a:"s2", as:"r", b:"d2", bs:"l", bo:-30 },
+    { a:"s3", as:"r", b:"d2", bs:"l", bo:15 },
+    { a:"s4", as:"r", b:"d3", bs:"l", bo:-30 },
+    { a:"s4", as:"r", b:"llm", bs:"l", via:[[895,373],[895,347],[1085,347],[1085,380]], label:"context", lp:[1090, 305] },
+    { a:"s6", as:"r", b:"d5", bs:"l" },
+    { a:"s7", as:"r", b:"d5", bs:"l", bo:30, dash:true, col:"#6741d9" },
+    { a:"gw", as:"b", b:"d4", bs:"l", via:[[540,680]], label:"every action logged", lp:[600, 680] },
+    { a:"llm", as:"b", b:"ext", bs:"t", dash:true, col:"#e03131", label:"never called" }
   ]
 };
 
 /* ===================== 3. Lifecycle ===================== */
 const LIFE = {
-  W: 1350, H: 340,
+  W: 1420, H: 380,
   nodes: [
-    { id:"off", t:"circle", cx:70, cy:140, r:55, c:"blue", title:"Officer" },
-    { id:"portal", x:215, y:95, w:150, h:90, c:"blue", title:"Portal", icon:"monitor" },
-    { id:"qa", x:455, y:95, w:150, h:90, c:"teal", title:"Q&A Engine", size:18, icon:"magnifying-glass" },
-    { id:"store", t:"db", x:695, y:75, w:150, h:130, c:"green", title:"Fact Store", size:18 },
-    { id:"chk", x:935, y:95, w:150, h:90, c:"red", title:"Conflict\nCheck", size:18, icon:"warning" },
-    { id:"out", x:1175, y:95, w:160, h:90, c:"green", title:"Signed\nBriefing Note", size:17, icon:"seal-check" },
-    { id:"rev", x:935, y:245, w:150, h:75, c:"red", title:"Officer Review", size:17 }
+    { id:"off", t:"circle", cx:60, cy:150, r:50, c:"blue", title:"Officer" },
+    { id:"portal", x:150, y:110, w:130, h:80, c:"blue", title:"Portal", size:17 },
+    { id:"router", x:340, y:110, w:140, h:80, c:"orange", title:"Query\nRouter", size:17 },
+    { id:"store", t:"db", x:540, y:20, w:140, h:110, c:"green", title:"Golden\nRecord", size:16 },
+    { id:"vec", t:"db", x:540, y:180, w:140, h:110, c:"violet", title:"Vector\nIndex", size:16 },
+    { id:"llm", x:740, y:110, w:140, h:80, c:"teal", title:"Local LLM", size:17 },
+    { id:"chk", x:930, y:110, w:140, h:80, c:"red", title:"Answer\nChecks", size:17 },
+    { id:"appr", x:1110, y:110, w:140, h:80, c:"red", title:"Officer\nApproves", size:17 },
+    { id:"out", x:1290, y:110, w:120, h:80, c:"green", title:"Signed\nReply", size:17 },
+    { id:"flag", x:930, y:270, w:140, h:70, c:"red", title:"Flag /\nregenerate", size:15 },
+    { id:"mem", x:1110, y:270, w:300, h:70, c:"violet", title:"Saved to Past PQ archive", size:15 }
   ],
   edges: [
-    { a:"off", as:"r", b:"portal", bs:"l", label:"asks", num:"1", lp:[170,112] },
-    { a:"portal", as:"r", b:"qa", bs:"l", label:"query", num:"2", lp:[410,112] },
-    { a:"qa", as:"r", b:"store", bs:"l", label:"facts", num:"3", lp:[650,112] },
-    { a:"store", as:"r", b:"chk", bs:"l", label:"check", num:"4", lp:[890,112] },
-    { a:"chk", as:"r", b:"out", bs:"l", label:"sign", num:"5", lp:[1130,112] },
-    { a:"chk", as:"b", b:"rev", bs:"t", dash:true, col:"#e03131", label:"conflict", lp:[1045,215] },
-    { a:"rev", as:"r", b:"out", bs:"b", label:"certified" }
+    { a:"off", as:"r", b:"portal", bs:"l" },
+    { a:"portal", as:"r", b:"router", bs:"l", num:"1", label:"ask", lp:[310,90] },
+    { a:"router", as:"r", b:"store", bs:"l", label:"fact", lp:[510, 100] },
+    { a:"router", as:"r", b:"vec", bs:"l", label:"RAG", lp:[510, 205] },
+    { a:"store", as:"r", b:"llm", bs:"l", bo:-15 },
+    { a:"vec", as:"r", b:"llm", bs:"l", bo:15, num:"2", label:"evidence", lp:[745, 255] },
+    { a:"llm", as:"r", b:"chk", bs:"l", num:"3", label:"draft", lp:[905,90] },
+    { a:"chk", as:"r", b:"appr", bs:"l", num:"4", label:"pass", lp:[1090,90] },
+    { a:"appr", as:"r", b:"out", bs:"l", num:"5", label:"sign", lp:[1270,90] },
+    { a:"chk", as:"b", b:"flag", bs:"t", dash:true, col:"#e03131", label:"fail" },
+    { a:"out", as:"b", b:"mem", bs:"t", bo:90, dash:true, col:"#6741d9" }
   ]
 };
 
